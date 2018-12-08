@@ -148,7 +148,7 @@ namespace wf
 		arraynode_t m_head;
 		std::size_t m_head_size;
 		std::size_t m_arrayLength;
-		std::size_t m_size;
+		std::atomic<std::size_t> m_size;
 		static constexpr std::size_t hash_size_in_bits = sizeof(hash_t) * std::numeric_limits<unsigned char>::digits;
 	};
 
@@ -210,6 +210,7 @@ namespace wf
 	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t initialSize)
 	    : m_head(2UL << initialSize), m_head_size(2UL << initialSize), m_arrayLength(initialSize), m_size(0UL)
 	{
+		static_assert(std::atomic<std::size_t>::is_always_lock_free, "Atomic implementation is not lock free");
 		static_assert(std::atomic<node_ptr>::is_always_lock_free, "Atomic implementation is not lock free");
 
 		if (!is_power_of_two(initialSize))

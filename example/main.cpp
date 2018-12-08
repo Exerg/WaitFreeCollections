@@ -50,6 +50,10 @@ int main()
 			t.join();
 		}
 
+		m.visit([](std::pair<const std::size_t, std::size_t> p) {
+			std::cout << '[' << p.first << '-' << p.second << "]\n";
+		});
+
 		double max = *std::max_element(insertion_times.begin(), insertion_times.end());
 		std::cout << "Max:  " << max << "ms\n";
 		std::cout << "Mean: "

@@ -10,7 +10,8 @@ TEST(WaitFreeHashMap, Construction)
 	ASSERT_EQ(map.size(), 0);
 }
 
-TEST(WaitFreeHashMap, Insertion) {
+TEST(WaitFreeHashMap, Insertion)
+{
 	wf::unordered_map<std::size_t, std::size_t> map(8);
 
 	map.insert(0, 0);
@@ -19,7 +20,8 @@ TEST(WaitFreeHashMap, Insertion) {
 	ASSERT_EQ(map.size(), 1);
 }
 
-TEST(WaitFreeHashMap, EmptyGet) {
+TEST(WaitFreeHashMap, EmptyGet)
+{
 	wf::unordered_map<std::size_t, std::size_t> map(8);
 
 	std::optional<std::size_t> r = map.get(0);
@@ -27,7 +29,8 @@ TEST(WaitFreeHashMap, EmptyGet) {
 	ASSERT_FALSE(r.has_value());
 }
 
-TEST(WaitFreeHashMap, Get) {
+TEST(WaitFreeHashMap, Get)
+{
 	wf::unordered_map<std::size_t, std::size_t> map(8);
 
 	map.insert(0, 1);
@@ -37,16 +40,18 @@ TEST(WaitFreeHashMap, Get) {
 	ASSERT_EQ(*r, 1);
 }
 
-TEST(WaitFreeHashMap, FullHashMap) {
+TEST(WaitFreeHashMap, FullHashMap)
+{
 	wf::unordered_map<unsigned char, unsigned char> map(8);
 
-	for (std::size_t i = 0; i < std::numeric_limits<unsigned char>::max(); ++i) {
+	for (std::size_t i = 0; i < std::numeric_limits<unsigned char>::max(); ++i)
+	{
 		map.insert(static_cast<unsigned char>(i), static_cast<unsigned char>(i));
 	}
 
-	for (std::size_t i = 0; i < std::numeric_limits<unsigned char>::max(); ++i) {
+	for (std::size_t i = 0; i < std::numeric_limits<unsigned char>::max(); ++i)
+	{
 		unsigned char value = *map.get(static_cast<unsigned char>(i));
 		ASSERT_EQ(value, i);
-
 	}
 }

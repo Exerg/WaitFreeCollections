@@ -61,6 +61,10 @@ namespace wf
 
 		std::optional<Value> get(const Key& key);
 
+		bool update(const Key& key, Value& expected_value, const Value& value); // TODO
+
+		bool remove(const Key& key, Value& expected_value); // TODO
+
 		template <typename VisitorFun>
 		void visit(VisitorFun&& fun) noexcept(
 		    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<const hash_t&, const value_t&>>));
@@ -252,8 +256,8 @@ namespace wf
 
 			while (true)
 			{
-				if (failCount > 8)
-				{ // FIXME
+				if (failCount > 8) // FIXME
+				{
 					node = mark_datanode(local, position);
 				}
 				if (node.datanode_ptr == nullptr)

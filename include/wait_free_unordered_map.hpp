@@ -94,8 +94,8 @@ namespace wf
 
 			explicit arraynode__(std::size_t size);
 
-			arraynode__(const arraynode__&) = delete;
-			~arraynode__();
+			arraynode__(const arraynode__&) noexcept = delete;
+			~arraynode__() noexcept;
 
 			arraynode__& operator=(const arraynode__&) = delete;
 
@@ -183,7 +183,7 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::arraynode__::~arraynode__()
+	unordered_map<Key, Value, HashFunction>::arraynode__::~arraynode__() noexcept
 	{
 		for (std::size_t i = 0; i < m_size; ++i)
 		{

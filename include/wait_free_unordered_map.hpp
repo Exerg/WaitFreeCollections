@@ -48,6 +48,9 @@ namespace wf
 	class unordered_map
 	{
 	public:
+		using hash_t = std::invoke_result_t<HashFunction, Key>;
+		using value_t = Value;
+
 		explicit unordered_map(std::size_t initialSize);
 
 		unordered_map(const unordered_map&) = delete;
@@ -59,21 +62,19 @@ namespace wf
 		std::optional<Value> get(const Key& key);
 
 		template <typename VisitorFun>
-		void visit(VisitorFun&& fun);
+		void visit(VisitorFun&& fun) noexcept(
+		    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<const hash_t&, const value_t&>>));
 
-		std::size_t size() const;
+		std::size_t size() const noexcept;
 
-		bool is_empty() const;
+		bool is_empty() const noexcept;
 
 	private:
 		struct node__;
 		struct arraynode__;
 		union node_ptr;
 
-		using hash_t = std::invoke_result_t<HashFunction, Key>;
-		using value_t = Value;
 		using node_t = node__;
-
 		using arraynode_t = arraynode__;
 
 		struct node__
@@ -87,55 +88,25 @@ namespace wf
 			using value_t = std::atomic<node_ptr>;
 			using reference_t = value_t&;
 
-			explicit arraynode__(std::size_t size) : m_ptr{new value_t[size]}, m_size(size)
-			{
-				for (std::size_t i = 0; i < size; ++i)
-				{
-					new (&m_ptr[i]) value_t();
-				}
-			}
+			explicit arraynode__(std::size_t size);
 
 			arraynode__(const arraynode__&) = delete;
+			~arraynode__();
 
 			arraynode__& operator=(const arraynode__&) = delete;
 
-			~arraynode__()
-			{
-				for (std::size_t i = 0; i < m_size; ++i)
-				{
-					node_ptr child = m_ptr[i].load();
-					if (child.arraynode_ptr != nullptr)
-					{
-						if (is_array_node(child))
-						{
-							delete sanitize_ptr(child).arraynode_ptr;
-						}
-						else
-						{
-							delete child.datanode_ptr;
-						}
-					}
-				}
-
-				delete[] m_ptr;
-			}
-
-			reference_t operator[](std::size_t i)
-			{
-				return m_ptr[i];
-			}
+			reference_t operator[](std::size_t i);
 
 		private:
 			value_t* m_ptr;
-
 			std::size_t m_size;
 		};
 
 		union node_ptr
 		{
-			node_ptr() noexcept : datanode_ptr{nullptr}
-			{
-			}
+			node_ptr() noexcept;
+			node_ptr(node_t* datanode) noexcept;
+			node_ptr(arraynode_t* arraynode) noexcept;
 
 			node_t* datanode_ptr;
 
@@ -144,49 +115,100 @@ namespace wf
 			std::uintptr_t ptr_int;
 		};
 
-		static bool is_power_of_two(std::size_t nbr) noexcept;
+		node_ptr allocate_node(hash_t hash, value_t value) const;
+
+		node_ptr expandNode(node_ptr arraynode, std::size_t position, std::size_t level) noexcept;
+
+		template <typename VisitorFun>
+		void visit_array_node(node_ptr node, std::size_t level, VisitorFun&& fun) noexcept(
+		    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<const hash_t&, const value_t&>>));
 
 		constexpr static std::size_t log2_power_two(std::size_t x) noexcept;
 
-		static node_ptr mark_datanode(node_ptr arraynode, std::size_t position);
+		static bool is_power_of_two(std::size_t nbr) noexcept;
 
-		static bool is_marked(node_ptr node);
+		static node_ptr mark_datanode(node_ptr arraynode, std::size_t position) noexcept;
 
-		static bool is_array_node(node_ptr node);
+		static void mark_datanode(node_ptr& node) noexcept;
 
-		static void mark_datanode(node_ptr& node);
+		static void unmark_datanode(node_ptr& node) noexcept;
 
-		static void unmark_datanode(node_ptr& node);
+		static bool is_marked(node_ptr node) noexcept;
 
-		static void mark_arraynode(node_ptr& node);
+		static void mark_arraynode(node_ptr& node) noexcept;
 
-		static void unmark_arraynode(node_ptr& node);
+		static void unmark_arraynode(node_ptr& node) noexcept;
 
-		node_ptr expandNode(node_ptr arraynode, std::size_t position, std::size_t level);
+		static bool is_array_node(node_ptr node) noexcept;
 
-		template <typename VisitorFun>
-		void visit_array_node(node_ptr node, std::size_t level, VisitorFun&& fun);
+		static node_ptr get_node(node_ptr arraynode, std::size_t pos) noexcept;
 
-		node_ptr allocate_node(hash_t hash, value_t value) const;
-
-		static node_ptr get_node(node_ptr arraynode, std::size_t pos);
-
-		static node_ptr sanitize_ptr(node_ptr arraynode);
+		static node_ptr sanitize_ptr(node_ptr arraynode) noexcept;
 
 		arraynode_t m_head;
-
 		std::size_t m_head_size;
-
 		std::size_t m_arrayLength;
-
 		std::size_t m_size;
-
 		static constexpr std::size_t hash_size_in_bits = sizeof(hash_t) * std::numeric_limits<unsigned char>::digits;
 	};
 
 	template <typename Key, typename Value, typename HashFunction>
+	unordered_map<Key, Value, HashFunction>::node_ptr::node_ptr() noexcept : datanode_ptr{nullptr}
+	{
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	unordered_map<Key, Value, HashFunction>::node_ptr::node_ptr(node_t* datanode) noexcept : datanode_ptr{datanode}
+	{
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	unordered_map<Key, Value, HashFunction>::node_ptr::node_ptr(arraynode_t* arraynode) noexcept
+	    : arraynode_ptr{arraynode}
+	{
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	unordered_map<Key, Value, HashFunction>::arraynode__::arraynode__(std::size_t size)
+	    : m_ptr{new value_t[size]}, m_size(size)
+	{
+		for (std::size_t i = 0; i < size; ++i)
+		{
+			new (&m_ptr[i]) value_t();
+		}
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	unordered_map<Key, Value, HashFunction>::arraynode__::~arraynode__()
+	{
+		for (std::size_t i = 0; i < m_size; ++i)
+		{
+			node_ptr child = m_ptr[i].load();
+			if (child.arraynode_ptr != nullptr)
+			{
+				if (is_array_node(child))
+				{
+					delete sanitize_ptr(child).arraynode_ptr;
+				}
+				else
+				{
+					delete child.datanode_ptr;
+				}
+			}
+		}
+
+		delete[] m_ptr;
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	auto unordered_map<Key, Value, HashFunction>::arraynode__::operator[](std::size_t i) -> value_t&
+	{
+		return m_ptr[i];
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
 	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t initialSize)
-	  : m_head(2UL << initialSize), m_head_size(2UL << initialSize), m_arrayLength(initialSize), m_size(0UL)
+	    : m_head(2UL << initialSize), m_head_size(2UL << initialSize), m_arrayLength(initialSize), m_size(0UL)
 	{
 		static_assert(std::atomic<node_ptr>::is_always_lock_free, "Atomic implementation is not lock free");
 
@@ -315,7 +337,7 @@ namespace wf
 
 	template <typename Key, typename Value, typename HashFunction>
 	auto unordered_map<Key, Value, HashFunction>::allocate_node(hash_t hash, value_t value) const
-	  -> unordered_map::node_ptr
+	    -> unordered_map::node_ptr
 	{
 		node_ptr node_to_insert;
 
@@ -427,8 +449,8 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::mark_datanode(node_ptr arraynode, std::size_t position)
-	  -> unordered_map::node_ptr
+	auto unordered_map<Key, Value, HashFunction>::mark_datanode(node_ptr arraynode, std::size_t position) noexcept
+	    -> unordered_map::node_ptr
 	{
 		node_ptr oldValue = get_node(arraynode, position);
 		node_ptr value = oldValue;
@@ -440,13 +462,13 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::is_marked(node_ptr node)
+	bool unordered_map<Key, Value, HashFunction>::is_marked(node_ptr node) noexcept
 	{
 		return static_cast<bool>(node.ptr_int & 0b1UL);
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::is_array_node(node_ptr node)
+	bool unordered_map<Key, Value, HashFunction>::is_array_node(node_ptr node) noexcept
 	{
 		return static_cast<bool>(node.ptr_int & 0b10UL);
 	}
@@ -454,7 +476,7 @@ namespace wf
 	template <typename Key, typename Value, typename HashFunction>
 	auto unordered_map<Key, Value, HashFunction>::expandNode(node_ptr arraynode,
 	                                                         std::size_t position,
-	                                                         std::size_t level) -> unordered_map::node_ptr
+	                                                         std::size_t level) noexcept -> unordered_map::node_ptr
 	{
 		std::atomic<node_ptr>& node_atomic = (*sanitize_ptr(arraynode).arraynode_ptr)[position];
 		node_ptr old_value = node_atomic.load();
@@ -492,7 +514,8 @@ namespace wf
 
 	template <typename Key, typename Value, typename HashFunction>
 	template <typename VisitorFun>
-	void unordered_map<Key, Value, HashFunction>::visit(VisitorFun&& fun)
+	void unordered_map<Key, Value, HashFunction>::visit(VisitorFun&& fun) noexcept(
+	    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<const hash_t&, const value_t&>>))
 	{
 		for (std::size_t i = 0; i < m_head_size; ++i)
 		{
@@ -506,7 +529,8 @@ namespace wf
 				else
 				{
 					std::invoke(
-					  fun, std::pair<const hash_t&, const value_t&>(node.datanode_ptr->hash, node.datanode_ptr->value));
+					    fun,
+					    std::pair<const hash_t&, const value_t&>(node.datanode_ptr->hash, node.datanode_ptr->value));
 				}
 			}
 		}
@@ -514,7 +538,11 @@ namespace wf
 
 	template <typename Key, typename Value, typename HashFunction>
 	template <typename VisitorFun>
-	void unordered_map<Key, Value, HashFunction>::visit_array_node(node_ptr node, std::size_t level, VisitorFun&& fun)
+	void unordered_map<Key, Value, HashFunction>::visit_array_node(
+	    node_ptr node,
+	    std::size_t level,
+	    VisitorFun&&
+	        fun) noexcept(noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<const hash_t&, const value_t&>>))
 	{
 		for (std::size_t i = 0; i < m_arrayLength; ++i)
 		{
@@ -528,16 +556,16 @@ namespace wf
 				else
 				{
 					std::invoke(
-					  fun,
-					  std::pair<const hash_t&, const value_t&>(child.datanode_ptr->hash, child.datanode_ptr->value));
+					    fun,
+					    std::pair<const hash_t&, const value_t&>(child.datanode_ptr->hash, child.datanode_ptr->value));
 				}
 			}
 		}
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::get_node(node_ptr arraynode, std::size_t pos)
-	  -> unordered_map::node_ptr
+	auto unordered_map<Key, Value, HashFunction>::get_node(node_ptr arraynode, std::size_t pos) noexcept
+	    -> unordered_map::node_ptr
 	{
 		assert(is_array_node(arraynode));
 
@@ -547,50 +575,48 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::sanitize_ptr(node_ptr arraynode) -> node_ptr
+	auto unordered_map<Key, Value, HashFunction>::sanitize_ptr(node_ptr arraynode) noexcept -> node_ptr
 	{
 		unmark_arraynode(arraynode);
 		return arraynode;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::mark_datanode(node_ptr& node)
+	void unordered_map<Key, Value, HashFunction>::mark_datanode(node_ptr& node) noexcept
 	{
 		node.ptr_int |= 0b01UL;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::unmark_datanode(node_ptr& node)
+	void unordered_map<Key, Value, HashFunction>::unmark_datanode(node_ptr& node) noexcept
 	{
 		node.ptr_int &= ~0b01UL;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::mark_arraynode(node_ptr& node)
+	void unordered_map<Key, Value, HashFunction>::mark_arraynode(node_ptr& node) noexcept
 	{
 		node.ptr_int |= 0b10UL;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::unmark_arraynode(node_ptr& node)
+	void unordered_map<Key, Value, HashFunction>::unmark_arraynode(node_ptr& node) noexcept
 	{
 		node.ptr_int &= ~0b10UL;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	std::size_t unordered_map<Key, Value, HashFunction>::size() const
+	std::size_t unordered_map<Key, Value, HashFunction>::size() const noexcept
 	{
 		return m_size;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::is_empty() const
+	bool unordered_map<Key, Value, HashFunction>::is_empty() const noexcept
 	{
 		return size() == 0;
 	}
 
 } // namespace wf
-
-#undef clz
 
 #endif

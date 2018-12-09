@@ -135,7 +135,7 @@ namespace wf
 
 		node_ptr allocate_node(hash_t hash, value_t value) const;
 
-		node_ptr expandNode(node_ptr arraynode, std::size_t position, std::size_t level) noexcept;
+		node_ptr expand_node(node_ptr arraynode, std::size_t position, std::size_t level) noexcept;
 
 		template <typename VisitorFun>
 		void visit_array_node(node_ptr node, VisitorFun&& fun) noexcept(
@@ -283,7 +283,7 @@ namespace wf
 
 				if (is_marked(node))
 				{
-					node = expandNode(local, position, r);
+					node = expand_node(local, position, r);
 				}
 				if (is_array_node(node))
 				{
@@ -307,7 +307,7 @@ namespace wf
 						}
 						else
 						{
-							node = expandNode(local, position, r);
+							node = expand_node(local, position, r);
 							if (is_array_node(node))
 							{
 								local = node;
@@ -377,7 +377,7 @@ namespace wf
 
                 if (is_marked(node))
                 {
-                    node = expandNode(local, position, r);
+                    node = expand_node(local, position, r);
                 }
                 if (is_array_node(node))
                 {
@@ -402,7 +402,7 @@ namespace wf
                         }
                         else
                         {
-                            node = expandNode(local, position, r);
+                            node = expand_node(local, position, r);
                             if (is_array_node(node))
                             {
                                 local = node;
@@ -467,9 +467,9 @@ namespace wf
 	}
 
     template <typename Key, typename Value, typename HashFunction>
-    auto unordered_map<Key, Value, HashFunction>::expandNode(node_ptr arraynode,
-                                                             std::size_t position,
-                                                             std::size_t level) noexcept -> node_ptr
+    auto unordered_map<Key, Value, HashFunction>::expand_node(node_ptr arraynode,
+                                                              std::size_t position,
+                                                              std::size_t level) noexcept -> node_ptr
     {
         std::atomic<node_ptr>& node_atomic = (*sanitize_ptr(arraynode).arraynode_ptr)[position];
         node_ptr old_value = node_atomic.load();

@@ -40,18 +40,40 @@ TEST(WaitFreeHashMap, Get)
 	ASSERT_EQ(*r, 1);
 }
 
-TEST(WaitFreeHashMap, FullHashMap)
+TEST(WaitFreeHashMap, FullHashMapGet)
 {
 	wf::unordered_map<unsigned char, unsigned char> map(8);
 
-	for (std::size_t i = 0; i < std::numeric_limits<unsigned char>::max(); ++i)
+	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
 		map.insert(static_cast<unsigned char>(i), static_cast<unsigned char>(i));
 	}
 
-	for (std::size_t i = 0; i < std::numeric_limits<unsigned char>::max(); ++i)
+	ASSERT_EQ(map.size(), std::numeric_limits<unsigned char>::max() + 1);
+
+	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
 		unsigned char value = *map.get(static_cast<unsigned char>(i));
 		ASSERT_EQ(value, i);
 	}
+}
+
+TEST(WaitFreeHashMap, FullHashMapVisist)
+{
+	wf::unordered_map<unsigned char, unsigned char> map(8);
+
+	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
+	{
+		map.insert(static_cast<unsigned char>(i), static_cast<unsigned char>(i));
+	}
+
+	ASSERT_EQ(map.size(), std::numeric_limits<unsigned char>::max() + 1);
+
+	int nbr_value = 0;
+	map.visit([&nbr_value](std::pair<unsigned char, unsigned char> p) {
+		++nbr_value;
+		ASSERT_EQ(p.first, p.second);
+	});
+
+	ASSERT_EQ(nbr_value, std::numeric_limits<unsigned char>::max() + 1);
 }

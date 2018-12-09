@@ -332,7 +332,12 @@ namespace wf
 			node_ptr node_to_insert = allocate_node(fullhash, value);
 			node_ptr null{static_cast<node_t*>(nullptr)};
 
-			return (*sanitize_ptr(local).arraynode_ptr)[position].compare_exchange_weak(null, node_to_insert);
+			bool inserted = (*sanitize_ptr(local).arraynode_ptr)[position].compare_exchange_weak(null, node_to_insert);
+			if (inserted) {
+			    ++m_size;
+			}
+
+            return inserted;
 		}
 		else
 		{

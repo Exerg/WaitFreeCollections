@@ -294,7 +294,6 @@ namespace wf
 					{
 						if (node.datanode_ptr->hash == fullhash)
 						{
-							// watch(nullptr);
 							return false;
 						}
 						else
@@ -315,7 +314,6 @@ namespace wf
 			}
 		}
 
-		// watch(nullptr);
 		position = hash & (m_arrayLength - 1);
 		node_ptr node = get_node(local, position);
 
@@ -343,8 +341,8 @@ namespace wf
 
 			while (true)
 			{
-				if (failCount > 8)
-				{ // FIXME
+				if (failCount > 8) // FIXME
+				{
 					node = mark_datanode(local, position);
 				}
 
@@ -375,7 +373,6 @@ namespace wf
 					{
 						if (node.datanode_ptr->hash == fullhash)
 						{
-							// watch(nullptr);
 							return {node.datanode_ptr->value};
 						}
 						else
@@ -452,7 +449,6 @@ namespace wf
 		std::atomic<node_ptr>& node_atomic = (*sanitize_ptr(arraynode).arraynode_ptr)[position];
 		node_ptr old_value = node_atomic.load();
 
-		// watch(value);
 		if (is_array_node(old_value))
 		{
 			return old_value;
@@ -491,7 +487,6 @@ namespace wf
 
 		if ((*sanitize_ptr(arraynode).arraynode_ptr)[position].compare_exchange_weak(null, datanode))
 		{
-			// watch(nullptr);
 			++m_size;
 			return true;
 		}

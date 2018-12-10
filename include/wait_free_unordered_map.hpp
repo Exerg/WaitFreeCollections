@@ -139,6 +139,8 @@ namespace wf
 
 		bool try_node_insertion(node_ptr arraynode, std::size_t position, node_ptr datanode);
 
+		void ensure_not_replaced(node_ptr& local, size_t position, size_t r, node_ptr& node);
+
 		template <typename VisitorFun>
 		void visit_array_node(node_ptr node, VisitorFun&& fun) noexcept(
 		    noexcept(std::is_nothrow_invocable_v<VisitorFun, const std::pair<const hash_t, value_t>&>));
@@ -326,7 +328,6 @@ namespace wf
 		std::size_t array_pow = log2_power_two(m_arrayLength);
 
 		std::size_t position;
-		std::size_t failCount;
 		node_ptr local{&m_head};
 		mark_arraynode(local);
 
@@ -335,61 +336,41 @@ namespace wf
 
 		for (std::size_t r = 0; r < hash_size_in_bits - array_pow; r += array_pow)
 		{
-			failCount = 0;
 			std::tie(position, hash) = compute_pos_and_hash(array_pow, hash, r);
 			node_ptr node = get_node(local, position);
 
-			while (true)
+			if (is_array_node(node))
 			{
-				if (failCount > 8) // FIXME
-				{
-					node = mark_datanode(local, position);
-				}
+				local = node;
+			}
+			else if (node.datanode_ptr == nullptr)
+			{
+				return std::nullopt;
+			}
+			else if (node.ptr_int != get_node(local, position).ptr_int)
+			{
+				ensure_not_replaced(local, position, r, node);
 
-				if (node.datanode_ptr == nullptr)
-				{
-					return std::nullopt;
-				}
-
-				if (is_marked(node))
-				{
-					node = expand_node(local, position, r);
-				}
 				if (is_array_node(node))
 				{
 					local = node;
-					break;
 				}
-				else
+				else if (is_marked(node))
 				{
-					node_ptr node2 = get_node(local, position);
-					if (node.ptr_int != node2.ptr_int)
-					{
-						++failCount;
-						node = node2;
-						continue;
-					}
-					else
-					{
-						if (node.datanode_ptr->hash == fullhash)
-						{
-							return {node.datanode_ptr->value};
-						}
-						else
-						{
-							node = expand_node(local, position, r);
-							if (is_array_node(node))
-							{
-								local = node;
-								break;
-							}
-							else
-							{
-								++failCount;
-							}
-						}
-					}
+					local = expand_node(local, position, r);
 				}
+				else if (node.datanode_ptr == nullptr)
+				{
+					return std::nullopt;
+				}
+			}
+			else if (node.datanode_ptr->hash == fullhash)
+			{
+				return {node.datanode_ptr->value};
+			}
+			else
+			{
+				break;
 			}
 		}
 
@@ -493,6 +474,27 @@ namespace wf
 
 		delete datanode.datanode_ptr;
 		return false;
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	void unordered_map<Key, Value, HashFunction>::ensure_not_replaced(node_ptr& local,
+	                                                                  size_t position,
+	                                                                  size_t r,
+	                                                                  node_ptr& node)
+	{
+		std::size_t failCount = 0;
+		do
+		{
+			node = get_node(local, position);
+			++failCount;
+
+			if (failCount > 8) // FIXME
+			{
+				mark_datanode(node);
+				local = expand_node(local, position, r);
+				break;
+			}
+		} while (node.ptr_int != get_node(local, position).ptr_int);
 	}
 
 	template <typename Key, typename Value, typename HashFunction>

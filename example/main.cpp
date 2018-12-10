@@ -31,7 +31,7 @@ int main()
 				wf::operation_result result = m.insert(i, i);
 				clock_t t_end = std::clock();
 				insertion_times[i] = 1000.0 * static_cast<double>(t_end - t_start) / CLOCKS_PER_SEC;
-				if (result != wf::operation_result::success)
+				if (failed(result))
 				{
 					std::stringstream output;
 					output << "Not inserted: " << i << '\n';

@@ -22,6 +22,14 @@ namespace wf
 		already_present /**< the key is already present in the hash map */
 	};
 
+	[[nodiscard]] constexpr bool succeeded(operation_result e) noexcept {
+		return e == operation_result::success;
+	}
+
+	[[nodiscard]] constexpr bool failed(operation_result e) noexcept {
+		return !succeeded(e);
+	}
+
 	template <typename T>
 	T clz(T x) // FIXME
 	{

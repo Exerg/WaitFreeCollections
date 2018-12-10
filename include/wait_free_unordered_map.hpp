@@ -314,7 +314,7 @@ namespace wf
 			}
 		}
 
-		position = hash & (m_arrayLength - 1);
+		std::tie(position, std::ignore) = compute_pos_and_hash(position, hash, hash_size_in_bits - array_pow);
 		node_ptr node = get_node(local, position);
 
 		return node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, value));

@@ -4,7 +4,7 @@
 
 TEST(WaitFreeHashMap, Construction)
 {
-	wf::unordered_map<std::size_t, std::size_t> map(8);
+	wf::unordered_map<std::size_t, std::size_t> map(4);
 
 	ASSERT_TRUE(map.is_empty());
 	ASSERT_EQ(map.size(), 0);
@@ -12,7 +12,7 @@ TEST(WaitFreeHashMap, Construction)
 
 TEST(WaitFreeHashMap, Insertion)
 {
-	wf::unordered_map<std::size_t, std::size_t> map(8);
+	wf::unordered_map<std::size_t, std::size_t> map(4);
 
 	map.insert(0, 0);
 
@@ -22,7 +22,7 @@ TEST(WaitFreeHashMap, Insertion)
 
 TEST(WaitFreeHashMap, EmptyGet)
 {
-	wf::unordered_map<std::size_t, std::size_t> map(8);
+	wf::unordered_map<std::size_t, std::size_t> map(4);
 
 	std::optional<std::size_t> r = map.get(0);
 
@@ -31,7 +31,7 @@ TEST(WaitFreeHashMap, EmptyGet)
 
 TEST(WaitFreeHashMap, Get)
 {
-	wf::unordered_map<std::size_t, std::size_t> map(8);
+	wf::unordered_map<std::size_t, std::size_t> map(4);
 
 	map.insert(0, 1);
 	std::optional<std::size_t> r = map.get(0);
@@ -42,7 +42,7 @@ TEST(WaitFreeHashMap, Get)
 
 TEST(WaitFreeHashMap, FullHashMapGet)
 {
-	wf::unordered_map<unsigned char, unsigned char> map(8);
+	wf::unordered_map<unsigned char, unsigned char> map(4);
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
@@ -60,7 +60,7 @@ TEST(WaitFreeHashMap, FullHashMapGet)
 
 TEST(WaitFreeHashMap, FullHashMapVisist)
 {
-	wf::unordered_map<unsigned char, unsigned char> map(8);
+	wf::unordered_map<unsigned char, unsigned char> map(4);
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{

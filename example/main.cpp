@@ -6,6 +6,7 @@
 #include <numeric>
 #include <algorithm>
 #include <unordered_map>
+#include <sstream>
 
 #include <wait_free_unordered_map.hpp>
 
@@ -33,7 +34,9 @@ int main()
 				insertion_times[i] = 1000.0 * static_cast<double>(t_end - t_start) / CLOCKS_PER_SEC;
 				if (!inserted)
 				{
-					printf("%zu, %d\n", i, inserted);
+					std::stringstream output;
+					output << "Not inserted: " << i << '\n';
+					std::cout << output.str();
 				}
 			});
 		}

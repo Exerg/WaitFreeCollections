@@ -35,10 +35,10 @@ namespace wf
 	}
 
 	template <typename Key>
-	class identity_hash
+	class identity_hash // FIXME: Size doesn't match
 	{
 	public:
-		std::size_t operator()(const Key& k) const
+		std::size_t operator()(const Key& k) const noexcept
 		{
 			return static_cast<std::size_t>(k);
 		}
@@ -52,7 +52,7 @@ namespace wf
 		using hash_t = std::invoke_result_t<HashFunction, Key>;
 		using value_t = Value;
 
-		explicit unordered_map(std::size_t initialSize);
+		explicit unordered_map(std::size_t log_bucket_count);
 		unordered_map(const unordered_map&) = delete;
 		~unordered_map() noexcept = default;
 
@@ -78,7 +78,7 @@ namespace wf
 		 */
 		template <typename VisitorFun>
 		void visit(VisitorFun&& fun) noexcept(
-		    noexcept(std::is_nothrow_invocable_v<VisitorFun, const std::pair<const hash_t, value_t>&>));
+		    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>)); // FIXME
 
 		/**
 		 * Returns the number of elements into the collection
@@ -90,21 +90,23 @@ namespace wf
 	private:
 		struct node__;
 		struct arraynode__;
-		union node_ptr;
+		union node_union;
 
 		using node_t = node__;
 		using arraynode_t = arraynode__;
 
 		struct node__
 		{
+			// key_t key; FIXME
 			hash_t hash;
 			value_t value;
 		};
 
 		struct arraynode__
 		{
-			using value_t = std::atomic<node_ptr>;
+			using value_t = std::atomic<node_union>;
 			using reference_t = value_t&;
+			using const_reference_t = const value_t&;
 
 			explicit arraynode__(std::size_t size);
 
@@ -113,35 +115,37 @@ namespace wf
 
 			arraynode__& operator=(const arraynode__&) = delete;
 
-			reference_t operator[](std::size_t i);
+			reference_t operator[](std::size_t i) noexcept;
+
+			const_reference_t operator[](std::size_t i) const noexcept;
 
 		private:
 			value_t* m_ptr;
 			std::size_t m_size;
 		};
 
-		union node_ptr
+		union node_union
 		{
-			node_ptr() noexcept;
-			explicit node_ptr(node_t* datanode) noexcept;
-			explicit node_ptr(arraynode_t* arraynode) noexcept;
+			node_union() noexcept;
+			explicit node_union(node_t* datanode) noexcept;
+			explicit node_union(arraynode_t* arraynode) noexcept;
 
 			node_t* datanode_ptr;
 			arraynode_t* arraynode_ptr;
 			std::uintptr_t ptr_int;
 		};
 
-		node_ptr allocate_node(hash_t hash, value_t value) const;
+		node_union allocate_node(hash_t hash, value_t value) const;
 
-		node_ptr expand_node(node_ptr arraynode, std::size_t position, std::size_t level) noexcept;
+		node_union expand_node(node_union arraynode, std::size_t position, std::size_t level) noexcept;
 
-		bool try_node_insertion(node_ptr arraynode, std::size_t position, node_ptr datanode);
+		bool try_node_insertion(node_union arraynode, std::size_t position, node_union datanode);
 
-		void ensure_not_replaced(node_ptr& local, size_t position, size_t r, node_ptr& node);
+		void ensure_not_replaced(node_union& local, size_t position, size_t r, node_union& node);
 
 		template <typename VisitorFun>
-		void visit_array_node(node_ptr node, VisitorFun&& fun) noexcept(
-		    noexcept(std::is_nothrow_invocable_v<VisitorFun, const std::pair<const hash_t, value_t>&>));
+		void visit_array_node(node_union node, VisitorFun&& fun) noexcept(
+		    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>));
 
 		std::tuple<std::size_t, hash_t> compute_pos_and_hash(size_t array_pow, hash_t lasthash, size_t level) const;
 
@@ -149,23 +153,23 @@ namespace wf
 
 		static bool is_power_of_two(std::size_t nbr) noexcept;
 
-		static node_ptr mark_datanode(node_ptr arraynode, std::size_t position) noexcept;
+		static node_union mark_datanode(node_union arraynode, std::size_t position) noexcept;
 
-		static void mark_datanode(node_ptr& node) noexcept;
+		static void mark_datanode(node_union& node) noexcept;
 
-		static void unmark_datanode(node_ptr& node) noexcept;
+		static void unmark_datanode(node_union& node) noexcept;
 
-		static bool is_marked(node_ptr node) noexcept;
+		static bool is_marked(node_union node) noexcept;
 
-		static void mark_arraynode(node_ptr& node) noexcept;
+		static void mark_arraynode(node_union& node) noexcept;
 
-		static void unmark_arraynode(node_ptr& node) noexcept;
+		static void unmark_arraynode(node_union& node) noexcept;
 
-		static bool is_array_node(node_ptr node) noexcept;
+		static bool is_array_node(node_union node) noexcept;
 
-		static node_ptr get_node(node_ptr arraynode, std::size_t pos) noexcept;
+		static node_union get_node(node_union arraynode, std::size_t pos) noexcept;
 
-		static node_ptr sanitize_ptr(node_ptr arraynode) noexcept;
+		static node_union sanitize_ptr(node_union arraynode) noexcept;
 
 		arraynode_t m_head;
 		std::size_t m_head_size;
@@ -175,17 +179,17 @@ namespace wf
 	};
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::node_ptr::node_ptr() noexcept : datanode_ptr{nullptr}
+	unordered_map<Key, Value, HashFunction>::node_union::node_union() noexcept : datanode_ptr{nullptr}
 	{
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::node_ptr::node_ptr(node_t* datanode) noexcept : datanode_ptr{datanode}
+	unordered_map<Key, Value, HashFunction>::node_union::node_union(node_t* datanode) noexcept : datanode_ptr{datanode}
 	{
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::node_ptr::node_ptr(arraynode_t* arraynode) noexcept
+	unordered_map<Key, Value, HashFunction>::node_union::node_union(arraynode_t* arraynode) noexcept
 	    : arraynode_ptr{arraynode}
 	{
 	}
@@ -205,7 +209,7 @@ namespace wf
 	{
 		for (std::size_t i = 0; i < m_size; ++i)
 		{
-			node_ptr child = m_ptr[i].load();
+			node_union child = m_ptr[i].load();
 			if (child.arraynode_ptr != nullptr)
 			{
 				if (is_array_node(child))
@@ -223,19 +227,29 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::arraynode__::operator[](std::size_t i) -> value_t&
+	auto unordered_map<Key, Value, HashFunction>::arraynode__::operator[](std::size_t i) noexcept -> reference_t
 	{
 		return m_ptr[i];
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t initialSize)
-	    : m_head(2UL << initialSize), m_head_size(2UL << initialSize), m_arrayLength(initialSize), m_size(0UL)
+	auto unordered_map<Key, Value, HashFunction>::arraynode__::operator[](std::size_t i) const noexcept
+	    -> const_reference_t
+	{
+		return m_ptr[i];
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t log_bucket_count)
+	    : m_head(2UL << log_bucket_count)
+	    , m_head_size(2UL << log_bucket_count)
+	    , m_arrayLength(log_bucket_count)
+	    , m_size(0UL)
 	{
 		static_assert(std::atomic<std::size_t>::is_always_lock_free, "Atomic implementation is not lock free");
-		static_assert(std::atomic<node_ptr>::is_always_lock_free, "Atomic implementation is not lock free");
+		static_assert(std::atomic<node_union>::is_always_lock_free, "Atomic implementation is not lock free");
 
-		if (!is_power_of_two(initialSize))
+		if (!is_power_of_two(log_bucket_count))
 		{
 			throw std::runtime_error("Size should be a power of four");
 		}
@@ -244,21 +258,21 @@ namespace wf
 	template <typename Key, typename Value, typename HashFunction>
 	bool unordered_map<Key, Value, HashFunction>::insert(const Key& key, const Value& value)
 	{
-		std::size_t array_pow = log2_power_two(m_arrayLength);
+		std::size_t nbr_bits_to_shift = log2_power_two(m_arrayLength);
 
 		std::size_t position;
 		std::size_t failCount;
-		node_ptr local{&m_head};
+		node_union local{&m_head};
 		mark_arraynode(local);
 
 		hash_t fullhash = HashFunction{}(key);
 		hash_t hash = fullhash;
 
-		for (std::size_t r = 0; r < hash_size_in_bits - array_pow; r += array_pow)
+		for (std::size_t r = 0; r < hash_size_in_bits - nbr_bits_to_shift; r += nbr_bits_to_shift)
 		{
 			failCount = 0;
-			std::tie(position, hash) = compute_pos_and_hash(array_pow, hash, r);
-			node_ptr node = get_node(local, position);
+			std::tie(position, hash) = compute_pos_and_hash(nbr_bits_to_shift, hash, r);
+			node_union node = get_node(local, position);
 
 			while (true)
 			{
@@ -284,7 +298,7 @@ namespace wf
 				}
 				else
 				{
-					node_ptr node2 = get_node(local, position);
+					node_union node2 = get_node(local, position);
 					if (node.ptr_int != node2.ptr_int)
 					{
 						++failCount;
@@ -314,8 +328,8 @@ namespace wf
 			}
 		}
 
-		std::tie(position, std::ignore) = compute_pos_and_hash(position, hash, hash_size_in_bits - array_pow);
-		node_ptr node = get_node(local, position);
+		std::tie(position, std::ignore) = compute_pos_and_hash(position, hash, hash_size_in_bits - nbr_bits_to_shift);
+		node_union node = get_node(local, position);
 
 		return node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, value));
 	}
@@ -326,7 +340,7 @@ namespace wf
 		std::size_t array_pow = log2_power_two(m_arrayLength);
 
 		std::size_t position;
-		node_ptr local{&m_head};
+		node_union local{&m_head};
 		mark_arraynode(local);
 
 		hash_t fullhash = HashFunction{}(key);
@@ -335,7 +349,7 @@ namespace wf
 		for (std::size_t r = 0; r < hash_size_in_bits - array_pow; r += array_pow)
 		{
 			std::tie(position, hash) = compute_pos_and_hash(array_pow, hash, r);
-			node_ptr node = get_node(local, position);
+			node_union node = get_node(local, position);
 
 			if (is_array_node(node))
 			{
@@ -378,14 +392,14 @@ namespace wf
 	template <typename Key, typename Value, typename HashFunction>
 	template <typename VisitorFun>
 	void unordered_map<Key, Value, HashFunction>::visit(VisitorFun&& fun) noexcept(
-	    noexcept(std::is_nothrow_invocable_v<VisitorFun, const std::pair<const hash_t, value_t>&>))
+	    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>))
 	{
-		static_assert(std::is_invocable_v<VisitorFun, const std::pair<const hash_t, value_t>&>,
+		static_assert(std::is_invocable_v<VisitorFun, std::pair<key_t, value_t>>,
 		              "Visitor doesn't respect the concept");
 
 		for (std::size_t i = 0; i < m_head_size; ++i)
 		{
-			node_ptr node = m_head[i].load();
+			node_union node = m_head[i].load();
 			if (node.datanode_ptr != nullptr)
 			{
 				if (is_array_node(node))
@@ -394,9 +408,7 @@ namespace wf
 				}
 				else
 				{
-					std::invoke(
-					    fun,
-					    std::pair<const hash_t&, const value_t&>(node.datanode_ptr->hash, node.datanode_ptr->value));
+					std::invoke(fun, std::pair<key_t, value_t>(node.datanode_ptr->hash, node.datanode_ptr->value));
 				}
 			}
 		}
@@ -415,31 +427,31 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::allocate_node(hash_t hash, value_t value) const -> node_ptr
+	auto unordered_map<Key, Value, HashFunction>::allocate_node(hash_t hash, value_t value) const -> node_union
 	{
-		return node_ptr{new (std::align_val_t{8}) node_t{hash, value}};
+		return node_union{new (std::align_val_t{8}) node_t{hash, value}};
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::expand_node(node_ptr arraynode,
+	auto unordered_map<Key, Value, HashFunction>::expand_node(node_union arraynode,
 	                                                          std::size_t position,
-	                                                          std::size_t level) noexcept -> node_ptr
+	                                                          std::size_t level) noexcept -> node_union
 	{
-		std::atomic<node_ptr>& node_atomic = (*sanitize_ptr(arraynode).arraynode_ptr)[position];
-		node_ptr old_value = node_atomic.load();
+		std::atomic<node_union>& node_atomic = (*sanitize_ptr(arraynode).arraynode_ptr)[position];
+		node_union old_value = node_atomic.load();
 
 		if (is_array_node(old_value))
 		{
 			return old_value;
 		}
-		node_ptr value = node_atomic.load();
+		node_union value = node_atomic.load();
 
 		if (value.ptr_int != old_value.ptr_int)
 		{
 			return value;
 		}
 
-		node_ptr array_node{new (std::align_val_t{8}) arraynode_t{m_arrayLength}};
+		node_union array_node{new (std::align_val_t{8}) arraynode_t{m_arrayLength}};
 
 		std::size_t new_pos = value.datanode_ptr->hash >> (m_arrayLength + level) & (m_arrayLength - 1);
 		unmark_datanode(value);
@@ -450,19 +462,19 @@ namespace wf
 		if (!node_atomic.compare_exchange_weak(old_value, array_node))
 		{
 			array_node = sanitize_ptr(array_node);
-			(*array_node.arraynode_ptr)[new_pos] = node_ptr{};
+			(*array_node.arraynode_ptr)[new_pos] = node_union{};
 			delete array_node.arraynode_ptr;
 		}
 
-		return array_node;
+		return node_atomic.load();
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::try_node_insertion(node_ptr arraynode,
+	bool unordered_map<Key, Value, HashFunction>::try_node_insertion(node_union arraynode,
 	                                                                 std::size_t position,
-	                                                                 node_ptr datanode)
+	                                                                 node_union datanode)
 	{
-		node_ptr null{static_cast<node_t*>(nullptr)};
+		node_union null{static_cast<node_t*>(nullptr)};
 
 		if ((*sanitize_ptr(arraynode).arraynode_ptr)[position].compare_exchange_weak(null, datanode))
 		{
@@ -475,10 +487,10 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::ensure_not_replaced(node_ptr& local,
+	void unordered_map<Key, Value, HashFunction>::ensure_not_replaced(node_union& local,
 	                                                                  size_t position,
 	                                                                  size_t r,
-	                                                                  node_ptr& node)
+	                                                                  node_union& node)
 	{
 		std::size_t failCount = 0;
 		do
@@ -497,12 +509,12 @@ namespace wf
 
 	template <typename Key, typename Value, typename HashFunction>
 	template <typename VisitorFun>
-	void unordered_map<Key, Value, HashFunction>::visit_array_node(node_ptr node, VisitorFun&& fun) noexcept(
-	    noexcept(std::is_nothrow_invocable_v<VisitorFun, const std::pair<const hash_t, value_t>&>))
+	void unordered_map<Key, Value, HashFunction>::visit_array_node(node_union node, VisitorFun&& fun) noexcept(
+	    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>))
 	{
 		for (std::size_t i = 0; i < m_arrayLength; ++i)
 		{
-			node_ptr child = get_node(node, i);
+			node_union child = get_node(node, i);
 			if (child.datanode_ptr != nullptr)
 			{
 				if (is_array_node(child))
@@ -554,11 +566,11 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::mark_datanode(node_ptr arraynode, std::size_t position) noexcept
-	    -> node_ptr
+	auto unordered_map<Key, Value, HashFunction>::mark_datanode(node_union arraynode, std::size_t position) noexcept
+	    -> node_union
 	{
-		node_ptr oldValue = get_node(arraynode, position);
-		node_ptr value = oldValue;
+		node_union oldValue = get_node(arraynode, position);
+		node_union value = oldValue;
 		mark_datanode(value);
 
 		(*sanitize_ptr(arraynode).arraynode_ptr)[position].compare_exchange_weak(oldValue, value);
@@ -567,53 +579,53 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::mark_datanode(node_ptr& node) noexcept
+	void unordered_map<Key, Value, HashFunction>::mark_datanode(node_union& node) noexcept
 	{
 		node.ptr_int |= 0b01UL;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::unmark_datanode(node_ptr& node) noexcept
+	void unordered_map<Key, Value, HashFunction>::unmark_datanode(node_union& node) noexcept
 	{
 		node.ptr_int &= ~0b01UL;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::is_marked(node_ptr node) noexcept
+	bool unordered_map<Key, Value, HashFunction>::is_marked(node_union node) noexcept
 	{
 		return static_cast<bool>(node.ptr_int & 0b1UL);
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::mark_arraynode(node_ptr& node) noexcept
+	void unordered_map<Key, Value, HashFunction>::mark_arraynode(node_union& node) noexcept
 	{
 		node.ptr_int |= 0b10UL;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::unmark_arraynode(node_ptr& node) noexcept
+	void unordered_map<Key, Value, HashFunction>::unmark_arraynode(node_union& node) noexcept
 	{
 		node.ptr_int &= ~0b10UL;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::is_array_node(node_ptr node) noexcept
+	bool unordered_map<Key, Value, HashFunction>::is_array_node(node_union node) noexcept
 	{
 		return static_cast<bool>(node.ptr_int & 0b10UL);
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::get_node(node_ptr arraynode, std::size_t pos) noexcept -> node_ptr
+	auto unordered_map<Key, Value, HashFunction>::get_node(node_union arraynode, std::size_t pos) noexcept -> node_union
 	{
 		assert(is_array_node(arraynode));
 
-		node_ptr accessor = sanitize_ptr(arraynode);
+		node_union accessor = sanitize_ptr(arraynode);
 
 		return (*accessor.arraynode_ptr)[pos].load();
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::sanitize_ptr(node_ptr arraynode) noexcept -> node_ptr
+	auto unordered_map<Key, Value, HashFunction>::sanitize_ptr(node_union arraynode) noexcept -> node_union
 	{
 		unmark_arraynode(arraynode);
 		return arraynode;

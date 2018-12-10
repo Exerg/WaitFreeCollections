@@ -11,6 +11,25 @@
 
 namespace wf
 {
+	/**
+	 * @brief represents the return status of the operation.
+	 */
+	enum class operation_result
+	{
+		success, /**< operation successful */
+		expected_value_mismatch, /**< the key's associated value doesn't match the expected value */
+		element_not_found, /**< the key is not present in the hash map */
+		already_present /**< the key is already present in the hash map */
+	};
+
+	[[nodiscard]] constexpr bool succeeded(operation_result e) noexcept {
+		return e == operation_result::success;
+	}
+
+	[[nodiscard]] constexpr bool failed(operation_result e) noexcept {
+		return !succeeded(e);
+	}
+
 	template <typename T>
 	T clz(T x) // FIXME
 	{
@@ -58,17 +77,34 @@ namespace wf
 
 		unordered_map& operator=(const unordered_map&) = delete;
 
-		bool insert(const Key& key, const Value& value);
+		operation_result insert(const Key& key, const Value& value);
 
 		std::optional<Value> get(const Key& key);
 
-		bool update(const Key& key, const Value& value, Value& expected_value); // TODO
+		/**
+		 * Update the value associated with the given key.
+		 * expected_value has to differ from the new_value in order
+		 * otherwise the return status is always operation_result::expected_value_mismatch.
+		 *
+		 * @param key
+		 * @param value
+		 * @param expected_value
+		 * @return @see operation_result
+		 */
+		operation_result update(const Key& key, const Value& new_value, Value& expected_value); // TODO
 
-		bool update(const Key& key, const Value& value); // TODO
+		/**
+		 * Update the value associated with the given key.
+		 *
+		 * @param key
+		 * @param value
+		 * @return @see operation_result
+		 */
+		operation_result update(const Key& key, const Value& value); // TODO
 
-		bool remove(const Key& key); // TODO
+		operation_result remove(const Key& key); // TODO
 
-		bool remove(const Key& key, Value& expected_value); // TODO
+		operation_result remove(const Key& key, Value& expected_value); // TODO
 
 		/**
 		 * Applies functor on every element in the map.
@@ -256,7 +292,7 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::insert(const Key& key, const Value& value)
+	operation_result unordered_map<Key, Value, HashFunction>::insert(const Key& key, const Value& value)
 	{
 		std::size_t nbr_bits_to_shift = log2_power_two(m_arrayLength);
 
@@ -283,7 +319,7 @@ namespace wf
 
 				if (node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, value)))
 				{
-					return true;
+					return operation_result::success;
 				}
 
 				if (is_marked(node))
@@ -308,7 +344,7 @@ namespace wf
 					{
 						if (node.datanode_ptr->hash == fullhash)
 						{
-							return false;
+							return operation_result::already_present;
 						}
 						else
 						{
@@ -331,7 +367,12 @@ namespace wf
 		std::tie(position, std::ignore) = compute_pos_and_hash(position, hash, hash_size_in_bits - nbr_bits_to_shift);
 		node_union node = get_node(local, position);
 
-		return node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, value));
+		if (node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, value)))
+		{
+			return operation_result::success;
+		}
+
+		return operation_result::already_present;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>

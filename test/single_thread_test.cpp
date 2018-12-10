@@ -14,10 +14,14 @@ TEST(WaitFreeHashMap, Insertion)
 {
 	wf::unordered_map<std::size_t, std::size_t> map(4);
 
-	map.insert(0, 0);
+	ASSERT_EQ(map.insert(0, 0), wf::operation_result::success);
+	ASSERT_EQ(map.insert(0, 0), wf::operation_result::already_present);
 
 	ASSERT_FALSE(map.is_empty());
 	ASSERT_EQ(map.size(), 1);
+
+	map.insert(1, 0);
+	ASSERT_EQ(map.size(), 2);
 }
 
 TEST(WaitFreeHashMap, EmptyGet)

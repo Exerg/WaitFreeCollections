@@ -5,7 +5,6 @@
 #include <chrono>
 #include <numeric>
 #include <algorithm>
-#include <unordered_map>
 #include <sstream>
 
 #include <wait_free_unordered_map.hpp>

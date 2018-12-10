@@ -2,14 +2,12 @@
 #define WF_WAIT_FREE_UNORDERED_MAP
 
 #include <atomic>
-#include <cstddef>
-#include <cstdlib>
-#include <type_traits>
-#include <climits>
 #include <cassert>
-#include <cmath>
-#include <optional>
+#include <cstddef>
 #include <functional>
+#include <limits>
+#include <optional>
+#include <type_traits>
 
 namespace wf
 {

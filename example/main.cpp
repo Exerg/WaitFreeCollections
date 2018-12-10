@@ -28,10 +28,10 @@ int main()
 				f.wait();
 
 				clock_t t_start = std::clock();
-				bool inserted = m.insert(i, i);
+				wf::operation_result result = m.insert(i, i);
 				clock_t t_end = std::clock();
 				insertion_times[i] = 1000.0 * static_cast<double>(t_end - t_start) / CLOCKS_PER_SEC;
-				if (!inserted)
+				if (result != wf::operation_result::success)
 				{
 					std::stringstream output;
 					output << "Not inserted: " << i << '\n';

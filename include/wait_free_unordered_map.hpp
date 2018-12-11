@@ -126,32 +126,27 @@ namespace wf
 		bool is_empty() const noexcept;
 
 	private:
-		struct node__;
-		struct arraynode__;
 		union node_union;
 
-		using node_t = node__;
-		using arraynode_t = arraynode__;
-
-		struct node__
+		struct node_t
 		{
-			// key_t key; FIXME
 			hash_t hash;
+			key_t key;
 			value_t value;
 		};
 
-		struct arraynode__
+		struct arraynode_t
 		{
 			using value_t = std::atomic<node_union>;
 			using reference_t = value_t&;
 			using const_reference_t = const value_t&;
 
-			explicit arraynode__(std::size_t size);
+			explicit arraynode_t(std::size_t size);
 
-			arraynode__(const arraynode__&) noexcept = delete;
-			~arraynode__() noexcept;
+			arraynode_t(const arraynode_t&) noexcept = delete;
+			~arraynode_t() noexcept;
 
-			arraynode__& operator=(const arraynode__&) = delete;
+			arraynode_t& operator=(const arraynode_t&) = delete;
 
 			reference_t operator[](std::size_t i) noexcept;
 
@@ -173,7 +168,7 @@ namespace wf
 			std::uintptr_t ptr_int;
 		};
 
-		node_union allocate_node(hash_t hash, value_t value) const;
+		node_union allocate_node(hash_t hash, key_t key, value_t value) const;
 
 		node_union expand_node(node_union arraynode, std::size_t position, std::size_t level) noexcept;
 
@@ -236,7 +231,7 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::arraynode__::arraynode__(std::size_t size)
+	unordered_map<Key, Value, HashFunction>::arraynode_t::arraynode_t(std::size_t size)
 	    : m_ptr{new value_t[size]}, m_size(size)
 	{
 		for (std::size_t i = 0; i < size; ++i)
@@ -246,7 +241,7 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::arraynode__::~arraynode__() noexcept
+	unordered_map<Key, Value, HashFunction>::arraynode_t::~arraynode_t() noexcept
 	{
 		for (std::size_t i = 0; i < m_size; ++i)
 		{
@@ -268,13 +263,13 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::arraynode__::operator[](std::size_t i) noexcept -> reference_t
+	auto unordered_map<Key, Value, HashFunction>::arraynode_t::operator[](std::size_t i) noexcept -> reference_t
 	{
 		return m_ptr[i];
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::arraynode__::operator[](std::size_t i) const noexcept
+	auto unordered_map<Key, Value, HashFunction>::arraynode_t::operator[](std::size_t i) const noexcept
 	    -> const_reference_t
 	{
 		return m_ptr[i];
@@ -322,7 +317,8 @@ namespace wf
 					node = mark_datanode(local, position);
 				}
 
-				if (node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, value)))
+				if (node.datanode_ptr == nullptr
+				    && try_node_insertion(local, position, allocate_node(fullhash, key, value)))
 				{
 					return operation_result::success;
 				}
@@ -372,7 +368,7 @@ namespace wf
 		std::tie(position, std::ignore) = compute_pos_and_hash(position, hash, hash_size_in_bits - nbr_bits_to_shift);
 		node_union node = get_node(local, position);
 
-		if (node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, value)))
+		if (node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, key, value)))
 		{
 			return operation_result::success;
 		}
@@ -468,7 +464,7 @@ namespace wf
 				}
 				else
 				{
-					std::invoke(fun, std::pair<key_t, value_t>(node.datanode_ptr->hash, node.datanode_ptr->value));
+					std::invoke(fun, std::pair<key_t, value_t>(node.datanode_ptr->key, node.datanode_ptr->value));
 				}
 			}
 		}
@@ -487,9 +483,10 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::allocate_node(hash_t hash, value_t value) const -> node_union
+	auto unordered_map<Key, Value, HashFunction>::allocate_node(hash_t hash, key_t key, value_t value) const
+	    -> node_union
 	{
-		return node_union{new (std::align_val_t{8}) node_t{hash, value}};
+		return node_union{new (std::align_val_t{8}) node_t{hash, key, value}};
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
@@ -605,7 +602,7 @@ namespace wf
 						return operation_result::expected_value_mismatch;
 					}
 
-					node_union new_node = allocate_node(fullhash, value);
+					node_union new_node = allocate_node(fullhash, key, value);
 					if ((*sanitize_ptr(local).arraynode_ptr)[position].compare_exchange_weak(node, new_node))
 					{
 						delete node.datanode_ptr;
@@ -680,7 +677,7 @@ namespace wf
 				{
 					std::invoke(
 					    fun,
-					    std::pair<const hash_t&, const value_t&>(child.datanode_ptr->hash, child.datanode_ptr->value));
+					    std::pair<const hash_t&, const value_t&>(child.datanode_ptr->key, child.datanode_ptr->value));
 				}
 			}
 		}

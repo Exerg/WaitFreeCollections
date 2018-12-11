@@ -15,6 +15,7 @@ endif()
 get_filename_component(root_dir        ${CMAKE_SOURCE_DIR}     ABSOLUTE)
 get_filename_component(include_dir     ${root_dir}/include     ABSOLUTE)
 get_filename_component(test_dir        ${root_dir}/test        ABSOLUTE)
+get_filename_component(example_dir     ${root_dir}/example     ABSOLUTE)
 
 make_target(WaitFreeHashMapLibrary "WaitFreeHashMap" INCLUDES ${include_dir} OPTIONS cxx interface)
 
@@ -40,10 +41,13 @@ endif()
 if (BUILD_CLANG_FORMAT_TARGET)
     set(DIRS "${include_dir}")
     if (BUILD_TESTS)
-        set(DIRS "${DIRS} ${test_dir}")
+        list(APPEND DIRS ${test_dir})
+    endif()
+    if (BUILD_EXAMPLES)
+        list(APPEND DIRS ${example_dir})
     endif()
 
-    generate_clang_format_target("Clang-format" DIRECTORIES ${DIRS})
+    generate_clang_format_target("Clang-format" DIRS ${DIRS})
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")

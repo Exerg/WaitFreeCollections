@@ -1089,7 +1089,8 @@ function(generate_clang_format_target target_name)
     find_program(CLANG_FORMAT clang-format
             NAMES clang-format-9 clang-format-8 clang-format-7 clang-format-6)
 
-    split_args(files "DIRS" directories ${ARGN})
+    set(multiValueArgs DIRS FILES)
+    cmake_parse_arguments(generate_clang_format_target "" "" "${multiValueArgs}" ${ARGN})
 
     if(${CLANG_FORMAT} STREQUAL CLANG_FORMAT-NOTFOUND)
         message(WARNING "clang-format not found, ${format-target} not generated")
@@ -1098,14 +1099,16 @@ function(generate_clang_format_target target_name)
         message(STATUS "clang-format found: ${CLANG_FORMAT}")
     endif()
 
-    if(directories)
-        get_files(src_files ${directories} RECURSE)
-        set(files "${files} ${src_files}")
+    if(generate_clang_format_target_DIRS)
+        foreach(it ${generate_clang_format_target_DIRS})
+            get_files(tmp_files ${it} OPTIONS recurse)
+            set(generate_clang_format_target_FILES ${generate_clang_format_target_FILES} ${tmp_files})
+        endforeach()
     endif()
 
     add_custom_target(
             ${target_name}
-            COMMAND "${CLANG_FORMAT}" -style=file -i ${ARGN}
+            COMMAND "${CLANG_FORMAT}" -style=file -i ${generate_clang_format_target_FILES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
             VERBATIM
     )

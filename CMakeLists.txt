@@ -24,9 +24,9 @@ generate_clang_format_target("WaitFreeHashMapLibrary-format" ${sources})
 
 find_package(Threads REQUIRED)
 
-make_target(Sample1 "WaitFreeHashMap" example/main.cpp OPTIONS cxx executable)
-set_property(TARGET Sample1 PROPERTY CXX_STANDARD 17)
-target_link_libraries(Sample1 ${CMAKE_THREAD_LIBS_INIT} WaitFreeHashMapLibrary)
+make_target(Example1 "WaitFreeHashMap" example/main.cpp OPTIONS cxx executable)
+set_property(TARGET Example1 PROPERTY CXX_STANDARD 17)
+target_link_libraries(Example1 ${CMAKE_THREAD_LIBS_INIT} WaitFreeHashMapLibrary)
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
     set(TEST_BUILD ON)

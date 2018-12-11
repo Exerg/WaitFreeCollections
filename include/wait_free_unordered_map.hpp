@@ -130,8 +130,8 @@ namespace wf
 
 		struct node_t
 		{
-			// key_t key; FIXME
 			hash_t hash;
+			key_t key;
 			value_t value;
 		};
 
@@ -168,7 +168,7 @@ namespace wf
 			std::uintptr_t ptr_int;
 		};
 
-		node_union allocate_node(hash_t hash, value_t value) const;
+		node_union allocate_node(hash_t hash, key_t key, value_t value) const;
 
 		node_union expand_node(node_union arraynode, std::size_t position, std::size_t level) noexcept;
 
@@ -317,7 +317,8 @@ namespace wf
 					node = mark_datanode(local, position);
 				}
 
-				if (node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, value)))
+				if (node.datanode_ptr == nullptr
+				    && try_node_insertion(local, position, allocate_node(fullhash, key, value)))
 				{
 					return operation_result::success;
 				}
@@ -367,7 +368,7 @@ namespace wf
 		std::tie(position, std::ignore) = compute_pos_and_hash(position, hash, hash_size_in_bits - nbr_bits_to_shift);
 		node_union node = get_node(local, position);
 
-		if (node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, value)))
+		if (node.datanode_ptr == nullptr && try_node_insertion(local, position, allocate_node(fullhash, key, value)))
 		{
 			return operation_result::success;
 		}
@@ -482,9 +483,10 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::allocate_node(hash_t hash, value_t value) const -> node_union
+	auto unordered_map<Key, Value, HashFunction>::allocate_node(hash_t hash, key_t key, value_t value) const
+	    -> node_union
 	{
-		return node_union{new (std::align_val_t{8}) node_t{hash, value}};
+		return node_union{new (std::align_val_t{8}) node_t{hash, key, value}};
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
@@ -600,7 +602,7 @@ namespace wf
 						return operation_result::expected_value_mismatch;
 					}
 
-					node_union new_node = allocate_node(fullhash, value);
+					node_union new_node = allocate_node(fullhash, key, value);
 					if ((*sanitize_ptr(local).arraynode_ptr)[position].compare_exchange_weak(node, new_node))
 					{
 						delete node.datanode_ptr;

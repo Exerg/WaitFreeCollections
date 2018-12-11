@@ -22,11 +22,13 @@ namespace wf
 		already_present /**< the key is already present in the hash map */
 	};
 
-	[[nodiscard]] constexpr bool succeeded(operation_result e) noexcept {
+	[[nodiscard]] constexpr bool succeeded(operation_result e) noexcept
+	{
 		return e == operation_result::success;
 	}
 
-	[[nodiscard]] constexpr bool failed(operation_result e) noexcept {
+	[[nodiscard]] constexpr bool failed(operation_result e) noexcept
+	{
 		return !succeeded(e);
 	}
 
@@ -91,7 +93,7 @@ namespace wf
 		 * @param expected_value
 		 * @return @see operation_result
 		 */
-		operation_result update(const Key& key, const Value& new_value, Value& expected_value); // TODO
+		operation_result update(const Key& key, const Value& new_value, const Value& expected_value);
 
 		/**
 		 * Update the value associated with the given key.
@@ -100,7 +102,7 @@ namespace wf
 		 * @param value
 		 * @return @see operation_result
 		 */
-		operation_result update(const Key& key, const Value& value); // TODO
+		operation_result update(const Key& key, const Value& value);
 
 		operation_result remove(const Key& key); // TODO
 
@@ -176,6 +178,9 @@ namespace wf
 		node_union expand_node(node_union arraynode, std::size_t position, std::size_t level) noexcept;
 
 		bool try_node_insertion(node_union arraynode, std::size_t position, node_union datanode);
+
+		template <typename Fun>
+		operation_result update_impl(const Key& key, const Value& value, Fun&& compare_expected_value);
 
 		void ensure_not_replaced(node_union& local, size_t position, size_t r, node_union& node);
 
@@ -431,6 +436,20 @@ namespace wf
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
+	operation_result unordered_map<Key, Value, HashFunction>::update(const Key& key,
+	                                                                 const Value& new_value,
+	                                                                 const Value& expected_value)
+	{
+		return update_impl(key, new_value, [&expected_value](node_t* node) { return node->value == expected_value; });
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	operation_result unordered_map<Key, Value, HashFunction>::update(const Key& key, const Value& value)
+	{
+		return update_impl(key, value, [](auto) { return true; });
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
 	template <typename VisitorFun>
 	void unordered_map<Key, Value, HashFunction>::visit(VisitorFun&& fun) noexcept(
 	    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>))
@@ -525,6 +544,101 @@ namespace wf
 
 		delete datanode.datanode_ptr;
 		return false;
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	template <typename Fun>
+	operation_result unordered_map<Key, Value, HashFunction>::update_impl(const Key& key,
+	                                                                      const Value& value,
+	                                                                      Fun&& compare_expected_value)
+	{
+		std::size_t array_pow = log2_power_two(m_arrayLength);
+
+		std::size_t position;
+		node_union local{&m_head};
+		mark_arraynode(local);
+
+		hash_t fullhash = HashFunction{}(key);
+		hash_t hash = fullhash;
+
+		for (std::size_t r = 0; r < hash_size_in_bits - array_pow; r += array_pow)
+		{
+			std::tie(position, hash) = compute_pos_and_hash(array_pow, hash, r);
+			node_union node = get_node(local, position);
+
+			if (is_array_node(node))
+			{
+				local = node;
+			}
+			else if (is_marked(node))
+			{
+				local = expand_node(local, position, r);
+			}
+			else if (node.datanode_ptr == nullptr)
+			{
+				return operation_result::element_not_found;
+			}
+			else
+			{
+				if (node.ptr_int != get_node(local, position).ptr_int)
+				{
+					ensure_not_replaced(local, position, r, node);
+
+					if (is_array_node(node))
+					{
+						local = node;
+					}
+					else if (is_marked(node))
+					{
+						local = expand_node(local, position, r);
+					}
+					else if (node.datanode_ptr == nullptr)
+					{
+						return operation_result::element_not_found;
+					}
+				}
+
+				if (node.datanode_ptr->hash == fullhash)
+				{
+					if (!compare_expected_value(node.datanode_ptr))
+					{
+						return operation_result::expected_value_mismatch;
+					}
+
+					node_union new_node = allocate_node(fullhash, value);
+					if ((*sanitize_ptr(local).arraynode_ptr)[position].compare_exchange_weak(node, new_node))
+					{
+						delete node.datanode_ptr;
+
+						return operation_result::success;
+					}
+					else
+					{
+						delete new_node.datanode_ptr;
+
+						node = get_node(local, position);
+						if (is_array_node(node))
+						{
+							local = node;
+						}
+						else if (is_marked(node))
+						{
+							local = expand_node(local, position, r);
+						}
+						else
+						{
+							return operation_result::element_not_found;
+						}
+					}
+				}
+				else
+				{
+					return operation_result::element_not_found;
+				}
+			}
+		}
+
+		return operation_result::element_not_found;
 	}
 
 	template <typename Key, typename Value, typename HashFunction>

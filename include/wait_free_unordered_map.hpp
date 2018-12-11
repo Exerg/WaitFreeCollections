@@ -282,8 +282,8 @@ namespace wf
 
 	template <typename Key, typename Value, typename HashFunction>
 	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t log_bucket_count)
-	    : m_head(2UL << log_bucket_count)
-	    , m_head_size(2UL << log_bucket_count)
+	    : m_head(1UL << log_bucket_count)
+	    , m_head_size(1UL << log_bucket_count)
 	    , m_arrayLength(log_bucket_count)
 	    , m_size(0UL)
 	{

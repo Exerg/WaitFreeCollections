@@ -44,6 +44,48 @@ TEST(WaitFreeHashMap, Get)
 	ASSERT_EQ(*r, 1);
 }
 
+TEST(WaitFreeHashMap, Update)
+{
+	wf::unordered_map<std::size_t, std::size_t> map(4);
+
+	ASSERT_EQ(map.update(0, 5), wf::operation_result::element_not_found);
+
+	map.insert(0, 1);
+	ASSERT_EQ(*map.get(0), 1);
+	ASSERT_EQ(map.update(0, 5), wf::operation_result::success);
+	ASSERT_EQ(*map.get(0), 5);
+
+	map.insert(2, 15);
+	ASSERT_EQ(map.update(2, 5, 15), wf::operation_result::success);
+	ASSERT_EQ(map.update(2, 0, 0), wf::operation_result::expected_value_mismatch);
+	ASSERT_EQ(*map.get(2), 5);
+
+	/*map.remove(2); FIXME: uncomment when remove is implemented.
+	ASSERT_EQ(map.update(2, 0), wf::operation_result::element_not_found);*/
+}
+
+TEST(WaitFreeHashMap, FullHashMapUpdate)
+{
+	wf::unordered_map<unsigned char, std::size_t> map(4);
+
+	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
+	{
+		map.insert(static_cast<unsigned char>(i), i);
+	}
+
+	ASSERT_EQ(map.size(), std::numeric_limits<unsigned char>::max() + 1);
+
+	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
+	{
+		ASSERT_EQ(map.update(static_cast<unsigned char>(i), i * 2, i), wf::operation_result::success);
+	}
+
+	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
+	{
+		ASSERT_EQ(*map.get(static_cast<unsigned char>(i)), i * 2);
+	}
+}
+
 TEST(WaitFreeHashMap, FullHashMapGet)
 {
 	wf::unordered_map<unsigned char, unsigned char> map(4);

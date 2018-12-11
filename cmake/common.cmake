@@ -1079,6 +1079,39 @@ function(configure_folder input_folder output_folder)
     endforeach()
 endfunction()
 
+## target_generate_clang_format(target_name [FILES files...] [DIRS directories...])
+# Generate a format target (${target_name}) which format the given files
+# The generated target lanch clang-format on all the given files with -style=file
+#   {value}  [in] target_name:   Name of the format target
+#   {value}  [in] files:         Sources files
+#   {value}  [in] directories:   Directories from which sources files are generated
+function(generate_clang_format_target target_name)
+    find_program(CLANG_FORMAT clang-format
+            NAMES clang-format-9 clang-format-8 clang-format-7 clang-format-6)
+
+    split_args(files "DIRS" directories ${ARGN})
+
+    if(${CLANG_FORMAT} STREQUAL CLANG_FORMAT-NOTFOUND)
+        message(WARNING "clang-format not found, ${format-target} not generated")
+        return()
+    else()
+        message(STATUS "clang-format found: ${CLANG_FORMAT}")
+    endif()
+
+    if(directories)
+        get_files(src_files ${directories} RECURSE)
+        set(files "${files} ${src_files}")
+    endif()
+
+    add_custom_target(
+            ${target_name}
+            COMMAND "${CLANG_FORMAT}" -style=file -i ${ARGN}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            VERBATIM
+    )
+    message(STATUS "Format target ${target_name} generated")
+endfunction()
+
 
 # disable compiler specific extensions
 set(CMAKE_C_EXTENSIONS OFF)
@@ -1092,23 +1125,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-# place generated binaries in build/bin
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/build/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/build/bin/)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/build/bin/)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/build/bin/)
+# place generated binaries in bin
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/bin/)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/bin/)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/)
 
-# place generated libs in build/lib
-file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/build/lib/)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/build/lib/)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/build/lib/)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/build/lib/)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/build/lib/)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/build/lib/)
+# place generated libs in lib
+file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib/)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}/lib/)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/lib/)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_BINARY_DIR}/lib/)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib/)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/lib/)
 
 # enable IDE folders
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)

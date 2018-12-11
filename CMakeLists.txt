@@ -3,13 +3,12 @@ project(WaitFreeHashMap)
 enable_language(CXX)
 
 include(cmake/common.cmake)
-include(cmake/get_external_dependency.cmake)
-include(cmake/clang_format.cmake)
+include(cmake/conan.cmake)
 
 set(CMAKE_DEBUG_POSTFIX _d)
 
 # By default build in Release mode
-if( NOT CMAKE_BUILD_TYPE )
+if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
@@ -19,30 +18,50 @@ get_filename_component(test_dir        ${root_dir}/test        ABSOLUTE)
 
 make_target(WaitFreeHashMapLibrary "WaitFreeHashMap" INCLUDES ${include_dir} OPTIONS cxx interface)
 
-get_files(sources ${include_dir})
-generate_clang_format_target("WaitFreeHashMapLibrary-format" ${sources})
+option(BUILD_EXAMPLES "Build project examples" OFF)
+option(BUILD_TESTS "Build project tests" OFF)
+option(BUILD_CLANG_FORMAT_TARGET "Build clang-format target" OFF)
+option(BUILD_ALL "Activate all previous options" OFF)
 
-find_package(Threads REQUIRED)
-
-make_target(Example1 "WaitFreeHashMap" example/main.cpp OPTIONS cxx executable)
-set_property(TARGET Example1 PROPERTY CXX_STANDARD 17)
-target_link_libraries(Example1 ${CMAKE_THREAD_LIBS_INIT} WaitFreeHashMapLibrary)
-
-if (CMAKE_BUILD_TYPE MATCHES "Debug")
-    set(TEST_BUILD ON)
+if (BUILD_ALL)
+    set(BUILD_EXAMPLES ON)
+    set(BUILD_TESTS ON)
+    set(BUILD_CLANG_FORMAT_TARGET ON)
 endif()
 
-if (TEST_BUILD MATCHES "ON")
+if (BUILD_EXAMPLES)
+    find_package(Threads REQUIRED)
+
+    make_target(Example1 "WaitFreeHashMap" example/main.cpp OPTIONS cxx executable)
+    set_property(TARGET Example1 PROPERTY CXX_STANDARD 17)
+    target_link_libraries(Example1 ${CMAKE_THREAD_LIBS_INIT} WaitFreeHashMapLibrary)
+endif()
+
+if (BUILD_CLANG_FORMAT_TARGET)
+    set(DIRS "${include_dir}")
+    if (BUILD_TESTS)
+        set(DIRS "${DIRS} ${test_dir}")
+    endif()
+
+    generate_clang_format_target("Clang-format" DIRECTORIES ${DIRS})
+endif()
+
+if (CMAKE_BUILD_TYPE MATCHES "Debug")
+    set(BUILD_TESTS ON)
+endif()
+
+if (BUILD_TESTS)
     message(STATUS "Enabling testing")
     enable_testing()
-    get_external_dependency(googletest external_libs/google_test.cmake)
+
+    conan_check(REQUIRED)
+    conan_cmake_run(CONANFILE .conanfile.txt
+            BASIC_SETUP CMAKE_TARGETS
+            BUILD missing)
 
     make_target(SingleThreadTests "WaitFreeHashMap" test/single_thread_test.cpp OPTIONS cxx executable)
     set_property(TARGET SingleThreadTests PROPERTY CXX_STANDARD 17)
-    target_link_libraries(SingleThreadTests WaitFreeHashMapLibrary gtest_main)
-
-    get_files(test_sources ${test_dir})
-    generate_clang_format_target("Tests-format" ${test_sources})
+    target_link_libraries(SingleThreadTests WaitFreeHashMapLibrary CONAN_PKG::gtest)
 
     add_test(NAME SingleThreadTest COMMAND SingleThreadTests)
 endif()

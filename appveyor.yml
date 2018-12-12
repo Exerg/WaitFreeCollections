@@ -1,0 +1,33 @@
+image: ubuntu
+
+install:
+    # install conan
+    - sudo pip install conan --upgrade
+
+before_build:
+    # update gcc and g++ alternatives
+    - sudo update-alternatives --set gcc /usr/bin/gcc-8
+
+    - gcc --version
+    - g++ --version
+    - cmake --version
+
+    - mkdir ${APPVEYOR_BUILD_FOLDER}/debug_build
+    - cd ${APPVEYOR_BUILD_FOLDER}/debug_build
+    - cmake .. -DBUILD_ALL=1 -DCMAKE_BUILD_TYPE=Debug
+
+    - mkdir ${APPVEYOR_BUILD_FOLDER}/release_build
+    - cd ${APPVEYOR_BUILD_FOLDER}/release_build
+    - cmake .. -DBUILD_ALL=1 -DCMAKE_BUILD_TYPE=Release
+
+build_script:
+    - cd ${APPVEYOR_BUILD_FOLDER}/debug_build
+    - make
+
+    - cd ${APPVEYOR_BUILD_FOLDER}/release_build
+    - make
+
+test_script:
+    - ${APPVEYOR_BUILD_FOLDER}/debug_build/bin/SingleThreadTests
+    - ${APPVEYOR_BUILD_FOLDER}/release_build/bin/SingleThreadTests
+

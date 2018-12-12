@@ -1,4 +1,4 @@
-# WaitFreeHashMap
+# WaitFreeHashMap [![Build status](https://ci.appveyor.com/api/projects/status/ygsryor3ndywqymr/branch/master?svg=true)](https://ci.appveyor.com/project/CBenoit/waitfreehashmap-np5k8/branch/master)
 
 An implementation of an hashmap described in the article:
 > P. Laborde, S. Feldman et D. Dechev, « A Wait-Free Hash Map », <br>
@@ -13,3 +13,4 @@ License: MIT
 
 - Compiler which supports C++17
 - CMake ≥ 3.10
+

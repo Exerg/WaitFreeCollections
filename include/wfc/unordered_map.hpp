@@ -131,6 +131,14 @@ namespace wfc
 		template <typename Fun>
 		operation_result update_impl(const Key& key, const Value& value, Fun&& compare_expected_value);
 
+		template <typename Fun>
+		operation_result remove_impl(const Key& key, Fun&& compare_expected_value);
+
+		template <typename CmpFun, typename AllocFun>
+		operation_result update_or_remove_impl(const Key& key,
+		                                       CmpFun&& compare_expected_value,
+		                                       AllocFun&& replacing_node);
+
 		void ensure_not_replaced(node_union& local, size_t position, size_t r, node_union& node);
 
 		template <typename VisitorFun>
@@ -317,13 +325,15 @@ namespace wfc
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	operation_result unordered_map<Key, Value, HashFunction>::remove(const Key& key, const Value& expected_value) {
-		return operation_result::element_not_found;
+	operation_result unordered_map<Key, Value, HashFunction>::remove(const Key& key, const Value& expected_value)
+	{
+		return remove_impl(key, [&expected_value](node_t* node) { return node->value == expected_value; });
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
-	operation_result unordered_map<Key, Value, HashFunction>::remove(const Key& key) {
-		return operation_result::element_not_found;
+	operation_result unordered_map<Key, Value, HashFunction>::remove(const Key& key)
+	{
+		return remove_impl(key, [](auto) { return true; });
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
@@ -430,6 +440,24 @@ namespace wfc
 	                                                                      const Value& value,
 	                                                                      Fun&& compare_expected_value)
 	{
+		return update_or_remove_impl(key, compare_expected_value, [&value, &key, this](hash_t fullhash) {
+			return this->allocate_node(fullhash, key, value);
+		});
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	template <typename Fun>
+	operation_result unordered_map<Key, Value, HashFunction>::remove_impl(const Key& key, Fun&& compare_expected_value)
+	{
+		return update_or_remove_impl(key, compare_expected_value, [](hash_t) { return node_union{}; });
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	template <typename CmpFun, typename AllocFun>
+	operation_result unordered_map<Key, Value, HashFunction>::update_or_remove_impl(const Key& key,
+	                                                                                CmpFun&& compare_expected_value,
+	                                                                                AllocFun&& replacing_node)
+	{
 		std::size_t array_pow = log2_of_power_of_two<hash_size_in_bits>(m_arrayLength);
 
 		std::size_t position;
@@ -465,10 +493,12 @@ namespace wfc
 					if (is_array_node(node))
 					{
 						local = node;
+						continue;
 					}
 					else if (is_marked(node))
 					{
 						local = expand_node(local, position, r);
+						continue;
 					}
 					else if (node.datanode_ptr == nullptr)
 					{
@@ -483,7 +513,7 @@ namespace wfc
 						return operation_result::expected_value_mismatch;
 					}
 
-					node_union new_node = allocate_node(fullhash, key, value);
+					node_union new_node = replacing_node(fullhash);
 					if ((*sanitize_ptr(local).arraynode_ptr)[position].compare_exchange_weak(node, new_node))
 					{
 						delete node.datanode_ptr;

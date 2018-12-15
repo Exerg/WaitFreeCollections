@@ -120,16 +120,20 @@ TEST(WaitFreeHashMap, FullHashMapRemove)
 	// remove half of the elements (alternate)
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
-		if (i % 2 == 0) {
+		if (i % 2 == 0)
+		{
 			ASSERT_EQ(map.remove(static_cast<unsigned char>(i), i), wfc::operation_result::success);
 		}
 	}
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
-		if (i % 2 == 0) {
+		if (i % 2 == 0)
+		{
 			ASSERT_FALSE(map.get(static_cast<unsigned char>(i)).has_value());
-		} else {
+		}
+		else
+		{
 			ASSERT_TRUE(map.get(static_cast<unsigned char>(i)).has_value());
 		}
 	}

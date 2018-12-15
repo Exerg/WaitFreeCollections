@@ -9,6 +9,8 @@
 #include <optional>
 #include <type_traits>
 
+#include "utility/math.hpp"
+
 namespace wfc
 {
 	/**
@@ -30,29 +32,6 @@ namespace wfc
 	[[nodiscard]] constexpr bool failed(operation_result e) noexcept
 	{
 		return !succeeded(e);
-	}
-
-	template <typename T>
-	T clz(T x) // FIXME
-	{
-		assert(x != 0); // clz is undefined for 0
-
-		if constexpr (std::is_same_v<T, unsigned int>)
-		{
-			return static_cast<T>(__builtin_clz(x));
-		}
-		else if constexpr (std::is_same_v<T, unsigned long int>)
-		{
-			return static_cast<T>(__builtin_clzl(x));
-		}
-		else if constexpr (std::is_same_v<T, unsigned long long int>)
-		{
-			return static_cast<T>(__builtin_clzll(x));
-		}
-		else
-		{
-			static_assert(!std::is_same_v<T, T>);
-		}
 	}
 
 	template <typename Key>
@@ -184,10 +163,6 @@ namespace wfc
 
 		std::tuple<std::size_t, hash_t> compute_pos_and_hash(size_t array_pow, hash_t lasthash, size_t level) const;
 
-		constexpr static std::size_t log2_power_two(std::size_t x) noexcept;
-
-		static bool is_power_of_two(std::size_t nbr) noexcept;
-
 		static node_union mark_datanode(node_union arraynode, std::size_t position) noexcept;
 
 		static void mark_datanode(node_union& node) noexcept;
@@ -293,7 +268,7 @@ namespace wfc
 	template <typename Key, typename Value, typename HashFunction>
 	operation_result unordered_map<Key, Value, HashFunction>::insert(const Key& key, const Value& value)
 	{
-		std::size_t nbr_bits_to_shift = log2_power_two(m_arrayLength);
+		std::size_t nbr_bits_to_shift = log2_of_power_of_two<hash_size_in_bits>(m_arrayLength);
 
 		std::size_t position;
 		std::size_t failCount;
@@ -378,7 +353,7 @@ namespace wfc
 	template <typename Key, typename Value, typename HashFunction>
 	std::optional<Value> unordered_map<Key, Value, HashFunction>::get(const Key& key)
 	{
-		std::size_t array_pow = log2_power_two(m_arrayLength);
+		std::size_t array_pow = log2_of_power_of_two<hash_size_in_bits>(m_arrayLength);
 
 		std::size_t position;
 		node_union local{&m_head};
@@ -548,7 +523,7 @@ namespace wfc
 	                                                                      const Value& value,
 	                                                                      Fun&& compare_expected_value)
 	{
-		std::size_t array_pow = log2_power_two(m_arrayLength);
+		std::size_t array_pow = log2_of_power_of_two<hash_size_in_bits>(m_arrayLength);
 
 		std::size_t position;
 		node_union local{&m_head};
@@ -700,18 +675,6 @@ namespace wfc
 		}
 
 		return {position, lasthash};
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	constexpr std::size_t unordered_map<Key, Value, HashFunction>::log2_power_two(std::size_t x) noexcept
-	{
-		return hash_size_in_bits - clz(x) - 1UL;
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::is_power_of_two(std::size_t nbr) noexcept
-	{
-		return nbr && !(nbr & (nbr - 1));
 	}
 
 	template <typename Key, typename Value, typename HashFunction>

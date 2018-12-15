@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 3.10) # For CXX_STANDARD 17 property on Visual St
 project(WaitFreeHashMap)
 enable_language(CXX)
 
-include(cmake/common.cmake)
-include(cmake/conan.cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
+include(ctulu)
+include(conan)
+include(setup_output_dirs)
 
 set(CMAKE_DEBUG_POSTFIX _d)
 
@@ -17,7 +20,7 @@ get_filename_component(include_dir     ${root_dir}/include     ABSOLUTE)
 get_filename_component(test_dir        ${root_dir}/test        ABSOLUTE)
 get_filename_component(example_dir     ${root_dir}/example     ABSOLUTE)
 
-make_target(WaitFreeHashMapLibrary "WaitFreeHashMap" INCLUDES ${include_dir} OPTIONS cxx interface)
+ctulu_create_target(WaitFreeHashMapLibrary "WaitFreeHashMap" INTERFACE_INCLUDES ${include_dir} CXX 17 INTERFACE)
 
 option(BUILD_EXAMPLES "Build project examples" OFF)
 option(BUILD_TESTS "Build project tests" OFF)
@@ -33,8 +36,7 @@ endif()
 if (BUILD_EXAMPLES)
     find_package(Threads REQUIRED)
 
-    make_target(Example1 "WaitFreeHashMap" example/main.cpp OPTIONS cxx executable)
-    set_property(TARGET Example1 PROPERTY CXX_STANDARD 17)
+    ctulu_create_target(Example1 "WaitFreeHashMap" FILES ${example_dir}/main.cpp CXX 17 EXECUTABLE)
     target_link_libraries(Example1 ${CMAKE_THREAD_LIBS_INIT} WaitFreeHashMapLibrary)
 endif()
 
@@ -47,7 +49,7 @@ if (BUILD_CLANG_FORMAT_TARGET)
         list(APPEND DIRS ${example_dir})
     endif()
 
-    generate_clang_format_target("Clang-format" DIRS ${DIRS})
+    ctulu_generate_clang_format("Clang-format" DIRS ${DIRS})
 endif()
 
 if (CMAKE_BUILD_TYPE MATCHES "Debug")
@@ -59,15 +61,10 @@ if (BUILD_TESTS)
     enable_testing()
 
     conan_check(REQUIRED)
-    conan_cmake_run(CONANFILE .conanfile.txt
-            BASIC_SETUP CMAKE_TARGETS
-            BUILD missing)
+    conan_cmake_run(CONANFILE .conanfile.txt BASIC_SETUP CMAKE_TARGETS BUILD missing)
 
-    make_target(SingleThreadTests "WaitFreeHashMap" test/single_thread_test.cpp OPTIONS cxx executable)
-    set_property(TARGET SingleThreadTests PROPERTY CXX_STANDARD 17)
+    ctulu_create_target(SingleThreadTests "WaitFreeHashMap" test/single_thread_test.cpp TEST CXX 17)
     target_link_libraries(SingleThreadTests WaitFreeHashMapLibrary CONAN_PKG::gtest)
-
-    add_test(NAME SingleThreadTest COMMAND SingleThreadTests)
 endif()
 
 #set(CMAKE_VERBOSE_MAKEFILE 1)

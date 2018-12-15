@@ -23,9 +23,9 @@ get_filename_component(example_dir     ${root_dir}/examples    ABSOLUTE)
 # set parameter INTERFACE since the library is header only.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Activating warning on library")
-    ctulu_create_target(WaitFreeHashMapLibrary "WaitFreeHashMap" INTERFACE_INCLUDES ${include_dir} CXX 17 INTERFACE)
+    ctulu_create_target(WFCUnorderedMapLib "WFCUnorderedMap" INTERFACE_INCLUDES ${include_dir} CXX 17 INTERFACE)
 else()
-    ctulu_create_target(WaitFreeHashMapLibrary "WaitFreeHashMap" INTERFACE_INCLUDES SYSTEM ${include_dir} CXX 17 INTERFACE)
+    ctulu_create_target(WFCUnorderedMapLib "WFCUnorderedMap" INTERFACE_INCLUDES SYSTEM ${include_dir} CXX 17 INTERFACE)
 endif()
 
 option(BUILD_EXAMPLES "Build project examples" OFF)
@@ -44,7 +44,7 @@ if (BUILD_EXAMPLES)
 
     ctulu_create_target(UnorderedMapExample1 "WaitFreeHashMap" FILES ${example_dir}/unordered_map_example.cpp CXX 17 EXECUTABLE W_LEVEL 2)
     ctulu_target_warning_from_file(UnorderedMapExample1 ${root_dir}/cmake/warnings.txt)
-    target_link_libraries(UnorderedMapExample1 Threads::Threads WaitFreeHashMapLibrary)
+    target_link_libraries(UnorderedMapExample1 Threads::Threads WFCUnorderedMapLib)
 endif()
 
 if (BUILD_CLANG_FORMAT_TARGET)
@@ -70,9 +70,9 @@ if (BUILD_TESTS)
     conan_check(REQUIRED)
     conan_cmake_run(CONANFILE .conanfile.txt BASIC_SETUP CMAKE_TARGETS BUILD missing)
 
-    ctulu_create_target(SingleThreadTests "WaitFreeHashMap" tests/unordered_map/single_thread_test.cpp TEST CXX 17 W_LEVEL 2)
-    ctulu_target_warning_from_file(SingleThreadTests ${root_dir}/cmake/warnings.txt)
-    target_link_libraries(SingleThreadTests WaitFreeHashMapLibrary CONAN_PKG::gtest)
+    ctulu_create_target(UnorderedMapSingleThreadsTests "WFCUnorderedMap" tests/unordered_map/single_thread_test.cpp TEST CXX 17 W_LEVEL 2)
+    ctulu_target_warning_from_file(UnorderedMapSingleThreadsTests ${root_dir}/cmake/warnings.txt)
+    target_link_libraries(UnorderedMapSingleThreadsTests WFCUnorderedMapLib CONAN_PKG::gtest)
 endif()
 
 #set(CMAKE_VERBOSE_MAKEFILE 1)

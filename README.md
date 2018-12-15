@@ -4,19 +4,19 @@
     <tr>
         <td><strong>master branch</strong></td>
         <td>
-            [![Build status](https://ci.appveyor.com/api/projects/status/sucn29if5de65t01/branch/master?svg=true)](https://ci.appveyor.com/project/CBenoit/waitfreecollections/branch/master)
+            <a href="https://ci.appveyor.com/project/CBenoit/waitfreecollections/branch/master"><img src="https://ci.appveyor.com/api/projects/status/sucn29if5de65t01/branch/master?svg=true"></a>
         </td>
     </tr>
     <tr>
         <td><strong>develop branch</strong></td>
         <td>
-            [![Build status](https://ci.appveyor.com/api/projects/status/sucn29if5de65t01/branch/develop?svg=true)](https://ci.appveyor.com/project/CBenoit/waitfreecollections/branch/develop)
+            <a href="https://ci.appveyor.com/project/CBenoit/waitfreecollections/branch/develop"><img src="https://ci.appveyor.com/api/projects/status/sucn29if5de65t01/branch/develop?svg=true"></a>
         </td>
     </tr>
     <tr>
         <td><strong>License</strong></td>
         <td>
-            [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+            <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg"></a>
         </td>
     </tr>
 </table>

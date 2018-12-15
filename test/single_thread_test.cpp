@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include <wfc/wait_free_unordered_map.hpp>
+#include <wfc/unordered_map.hpp>
 
 TEST(WaitFreeHashMap, Construction)
 {

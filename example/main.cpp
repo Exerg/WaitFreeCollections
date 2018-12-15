@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include <wfc/wait_free_unordered_map.hpp>
+#include <wfc/unordered_map.hpp>
 
 int main()
 {

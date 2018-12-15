@@ -1,10 +1,10 @@
 #include <gtest/gtest.h>
 
-#include <wait_free_unordered_map.hpp>
+#include <wfc/wait_free_unordered_map.hpp>
 
 TEST(WaitFreeHashMap, Construction)
 {
-	wf::unordered_map<std::size_t, std::size_t> map(4);
+	wfc::unordered_map<std::size_t, std::size_t> map(4);
 
 	ASSERT_TRUE(map.is_empty());
 	ASSERT_EQ(map.size(), 0);
@@ -12,10 +12,10 @@ TEST(WaitFreeHashMap, Construction)
 
 TEST(WaitFreeHashMap, Insertion)
 {
-	wf::unordered_map<std::size_t, std::size_t> map(4);
+	wfc::unordered_map<std::size_t, std::size_t> map(4);
 
-	ASSERT_EQ(map.insert(0, 0), wf::operation_result::success);
-	ASSERT_EQ(map.insert(0, 0), wf::operation_result::already_present);
+	ASSERT_EQ(map.insert(0, 0), wfc::operation_result::success);
+	ASSERT_EQ(map.insert(0, 0), wfc::operation_result::already_present);
 
 	ASSERT_FALSE(map.is_empty());
 	ASSERT_EQ(map.size(), 1);
@@ -26,7 +26,7 @@ TEST(WaitFreeHashMap, Insertion)
 
 TEST(WaitFreeHashMap, EmptyGet)
 {
-	wf::unordered_map<std::size_t, std::size_t> map(4);
+	wfc::unordered_map<std::size_t, std::size_t> map(4);
 
 	std::optional<std::size_t> r = map.get(0);
 
@@ -35,7 +35,7 @@ TEST(WaitFreeHashMap, EmptyGet)
 
 TEST(WaitFreeHashMap, Get)
 {
-	wf::unordered_map<std::size_t, std::size_t> map(4);
+	wfc::unordered_map<std::size_t, std::size_t> map(4);
 
 	map.insert(0, 1);
 	std::optional<std::size_t> r = map.get(0);
@@ -46,27 +46,27 @@ TEST(WaitFreeHashMap, Get)
 
 TEST(WaitFreeHashMap, Update)
 {
-	wf::unordered_map<std::size_t, std::size_t> map(4);
+	wfc::unordered_map<std::size_t, std::size_t> map(4);
 
-	ASSERT_EQ(map.update(0, 5), wf::operation_result::element_not_found);
+	ASSERT_EQ(map.update(0, 5), wfc::operation_result::element_not_found);
 
 	map.insert(0, 1);
 	ASSERT_EQ(*map.get(0), 1);
-	ASSERT_EQ(map.update(0, 5), wf::operation_result::success);
+	ASSERT_EQ(map.update(0, 5), wfc::operation_result::success);
 	ASSERT_EQ(*map.get(0), 5);
 
 	map.insert(2, 15);
-	ASSERT_EQ(map.update(2, 5, 15), wf::operation_result::success);
-	ASSERT_EQ(map.update(2, 0, 0), wf::operation_result::expected_value_mismatch);
+	ASSERT_EQ(map.update(2, 5, 15), wfc::operation_result::success);
+	ASSERT_EQ(map.update(2, 0, 0), wfc::operation_result::expected_value_mismatch);
 	ASSERT_EQ(*map.get(2), 5);
 
 	/*map.remove(2); FIXME: uncomment when remove is implemented.
-	ASSERT_EQ(map.update(2, 0), wf::operation_result::element_not_found);*/
+	ASSERT_EQ(map.update(2, 0), wfc::operation_result::element_not_found);*/
 }
 
 TEST(WaitFreeHashMap, FullHashMapUpdate)
 {
-	wf::unordered_map<unsigned char, std::size_t> map(4);
+	wfc::unordered_map<unsigned char, std::size_t> map(4);
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
@@ -77,7 +77,7 @@ TEST(WaitFreeHashMap, FullHashMapUpdate)
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
-		ASSERT_EQ(map.update(static_cast<unsigned char>(i), i * 2, i), wf::operation_result::success);
+		ASSERT_EQ(map.update(static_cast<unsigned char>(i), i * 2, i), wfc::operation_result::success);
 	}
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
@@ -88,7 +88,7 @@ TEST(WaitFreeHashMap, FullHashMapUpdate)
 
 TEST(WaitFreeHashMap, FullHashMapGet)
 {
-	wf::unordered_map<unsigned char, unsigned char> map(4);
+	wfc::unordered_map<unsigned char, unsigned char> map(4);
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
@@ -106,7 +106,7 @@ TEST(WaitFreeHashMap, FullHashMapGet)
 
 TEST(WaitFreeHashMap, FullHashMapVisist)
 {
-	wf::unordered_map<unsigned char, unsigned char> map(4);
+	wfc::unordered_map<unsigned char, unsigned char> map(4);
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{

@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include <wait_free_unordered_map.hpp>
+#include <wfc/wait_free_unordered_map.hpp>
 
 int main()
 {
@@ -18,7 +18,7 @@ int main()
 		std::promise<void> ready_promise;
 		f = std::shared_future<void>(ready_promise.get_future());
 
-		wf::unordered_map<std::size_t, std::size_t> m(8);
+		wfc::unordered_map<std::size_t, std::size_t> m(8);
 
 		std::array<std::thread, nbrThreads> threads;
 		std::array<double, nbrThreads> insertion_times = {};
@@ -28,7 +28,7 @@ int main()
 				f.wait();
 
 				clock_t t_start = std::clock();
-				wf::operation_result result = m.insert(i, i);
+				wfc::operation_result result = m.insert(i, i);
 				clock_t t_end = std::clock();
 				insertion_times[i] = 1000.0 * static_cast<double>(t_end - t_start) / CLOCKS_PER_SEC;
 				if (failed(result))

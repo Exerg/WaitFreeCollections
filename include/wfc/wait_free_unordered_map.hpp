@@ -1,5 +1,5 @@
-#ifndef WF_WAIT_FREE_UNORDERED_MAP
-#define WF_WAIT_FREE_UNORDERED_MAP
+#ifndef WFC_UNORDERED_MAP_HPP
+#define WFC_UNORDERED_MAP_HPP
 
 #include <atomic>
 #include <cassert>
@@ -9,7 +9,7 @@
 #include <optional>
 #include <type_traits>
 
-namespace wf
+namespace wfc
 {
 	/**
 	 * @brief represents the return status of the operation.
@@ -780,6 +780,6 @@ namespace wf
 		return arraynode;
 	}
 
-} // namespace wf
+} // namespace wfc
 
-#endif
+#endif // WFC_UNORDERED_MAP_HPP

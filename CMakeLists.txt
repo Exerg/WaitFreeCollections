@@ -20,6 +20,7 @@ get_filename_component(include_dir     ${root_dir}/include     ABSOLUTE)
 get_filename_component(test_dir        ${root_dir}/test        ABSOLUTE)
 get_filename_component(example_dir     ${root_dir}/example     ABSOLUTE)
 
+# set parameter INTERFACE since the library is header only.
 ctulu_create_target(WaitFreeHashMapLibrary "WaitFreeHashMap" INTERFACE_INCLUDES ${include_dir} CXX 17 INTERFACE)
 
 option(BUILD_EXAMPLES "Build project examples" OFF)

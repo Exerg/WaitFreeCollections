@@ -10,6 +10,7 @@
 #include <type_traits>
 
 #include "utility/math.hpp"
+#include "details/unordered_map/nodes.hpp"
 
 namespace wfc
 {
@@ -105,47 +106,9 @@ namespace wfc
 		bool is_empty() const noexcept;
 
 	private:
-		union node_union;
-
-		struct node_t
-		{
-			hash_t hash;
-			key_t key;
-			value_t value;
-		};
-
-		struct arraynode_t
-		{
-			using value_t = std::atomic<node_union>;
-			using reference_t = value_t&;
-			using const_reference_t = const value_t&;
-
-			explicit arraynode_t(std::size_t size);
-
-			arraynode_t(const arraynode_t&) noexcept = delete;
-			~arraynode_t() noexcept;
-
-			arraynode_t& operator=(const arraynode_t&) = delete;
-
-			reference_t operator[](std::size_t i) noexcept;
-
-			const_reference_t operator[](std::size_t i) const noexcept;
-
-		private:
-			value_t* m_ptr;
-			std::size_t m_size;
-		};
-
-		union node_union
-		{
-			node_union() noexcept;
-			explicit node_union(node_t* datanode) noexcept;
-			explicit node_union(arraynode_t* arraynode) noexcept;
-
-			node_t* datanode_ptr;
-			arraynode_t* arraynode_ptr;
-			std::uintptr_t ptr_int;
-		};
+		using node_t = details::node_t<hash_t, key_t, value_t>;
+		using node_union = details::node_union<node_t>;
+		using arraynode_t = details::arraynode_t<node_t>;
 
 		node_union allocate_node(hash_t hash, key_t key, value_t value) const;
 
@@ -164,91 +127,12 @@ namespace wfc
 
 		std::tuple<std::size_t, hash_t> compute_pos_and_hash(size_t array_pow, hash_t lasthash, size_t level) const;
 
-		static node_union mark_datanode(node_union arraynode, std::size_t position) noexcept;
-
-		static void mark_datanode(node_union& node) noexcept;
-
-		static void unmark_datanode(node_union& node) noexcept;
-
-		static bool is_marked(node_union node) noexcept;
-
-		static void mark_arraynode(node_union& node) noexcept;
-
-		static void unmark_arraynode(node_union& node) noexcept;
-
-		static bool is_array_node(node_union node) noexcept;
-
-		static node_union get_node(node_union arraynode, std::size_t pos) noexcept;
-
-		static node_union sanitize_ptr(node_union arraynode) noexcept;
-
 		arraynode_t m_head;
 		std::size_t m_head_size;
 		std::size_t m_arrayLength;
 		std::atomic<std::size_t> m_size;
 		static constexpr std::size_t hash_size_in_bits = sizeof(hash_t) * std::numeric_limits<unsigned char>::digits;
 	};
-
-	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::node_union::node_union() noexcept : datanode_ptr{nullptr}
-	{
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::node_union::node_union(node_t* datanode) noexcept : datanode_ptr{datanode}
-	{
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::node_union::node_union(arraynode_t* arraynode) noexcept
-	    : arraynode_ptr{arraynode}
-	{
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::arraynode_t::arraynode_t(std::size_t size)
-	    : m_ptr{new value_t[size]}, m_size(size)
-	{
-		for (std::size_t i = 0; i < size; ++i)
-		{
-			new (&m_ptr[i]) value_t();
-		}
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::arraynode_t::~arraynode_t() noexcept
-	{
-		for (std::size_t i = 0; i < m_size; ++i)
-		{
-			node_union child = m_ptr[i].load();
-			if (child.arraynode_ptr != nullptr)
-			{
-				if (is_array_node(child))
-				{
-					delete sanitize_ptr(child).arraynode_ptr;
-				}
-				else
-				{
-					delete child.datanode_ptr;
-				}
-			}
-		}
-
-		delete[] m_ptr;
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::arraynode_t::operator[](std::size_t i) noexcept -> reference_t
-	{
-		return m_ptr[i];
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::arraynode_t::operator[](std::size_t i) const noexcept
-	    -> const_reference_t
-	{
-		return m_ptr[i];
-	}
 
 	template <typename Key, typename Value, typename HashFunction>
 	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t log_bucket_count)
@@ -677,73 +561,6 @@ namespace wfc
 
 		return {position, lasthash};
 	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::mark_datanode(node_union arraynode, std::size_t position) noexcept
-	    -> node_union
-	{
-		node_union oldValue = get_node(arraynode, position);
-		node_union value = oldValue;
-		mark_datanode(value);
-
-		(*sanitize_ptr(arraynode).arraynode_ptr)[position].compare_exchange_weak(oldValue, value);
-
-		return get_node(arraynode, position);
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::mark_datanode(node_union& node) noexcept
-	{
-		node.ptr_int |= 0b01UL;
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::unmark_datanode(node_union& node) noexcept
-	{
-		node.ptr_int &= ~0b01UL;
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::is_marked(node_union node) noexcept
-	{
-		return static_cast<bool>(node.ptr_int & 0b1UL);
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::mark_arraynode(node_union& node) noexcept
-	{
-		node.ptr_int |= 0b10UL;
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	void unordered_map<Key, Value, HashFunction>::unmark_arraynode(node_union& node) noexcept
-	{
-		node.ptr_int &= ~0b10UL;
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	bool unordered_map<Key, Value, HashFunction>::is_array_node(node_union node) noexcept
-	{
-		return static_cast<bool>(node.ptr_int & 0b10UL);
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::get_node(node_union arraynode, std::size_t pos) noexcept -> node_union
-	{
-		assert(is_array_node(arraynode));
-
-		node_union accessor = sanitize_ptr(arraynode);
-
-		return (*accessor.arraynode_ptr)[pos].load();
-	}
-
-	template <typename Key, typename Value, typename HashFunction>
-	auto unordered_map<Key, Value, HashFunction>::sanitize_ptr(node_union arraynode) noexcept -> node_union
-	{
-		unmark_arraynode(arraynode);
-		return arraynode;
-	}
-
 } // namespace wfc
 
 #endif // WFC_UNORDERED_MAP_HPP

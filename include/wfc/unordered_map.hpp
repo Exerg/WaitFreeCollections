@@ -83,9 +83,22 @@ namespace wfc
 		 */
 		operation_result update(const Key& key, const Value& value);
 
-		operation_result remove(const Key& key); // TODO
+		/**
+		 * Remove the element associated to the given key if the
+		 * expected_value matches the current value.
+		 *
+		 * @param key
+		 * @return @see operation_result
+		 */
+		operation_result remove(const Key& key, const Value& expected_value);
 
-		operation_result remove(const Key& key, Value& expected_value); // TODO
+		/**
+		 * Remove the element associated to the given key.
+		 *
+		 * @param key
+		 * @return @see operation_result
+		 */
+		operation_result remove(const Key& key);
 
 		/**
 		 * Applies functor on every element in the map.

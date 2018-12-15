@@ -84,9 +84,8 @@ namespace wf
 		std::optional<Value> get(const Key& key);
 
 		/**
-		 * Update the value associated with the given key.
-		 * expected_value has to differ from the new_value in order
-		 * otherwise the return status is always operation_result::expected_value_mismatch.
+		 * Update the value associated with the given key if the current
+		 * value matches expected_value.
 		 *
 		 * @param key
 		 * @param value

@@ -56,6 +56,7 @@ TEST(WaitFreeHashMap, Update)
 	ASSERT_EQ(*map.get(0), 5);
 
 	map.insert(2, 15);
+	ASSERT_EQ(map.update(2, 15, 15), wf::operation_result::success);
 	ASSERT_EQ(map.update(2, 5, 15), wf::operation_result::success);
 	ASSERT_EQ(map.update(2, 0, 0), wf::operation_result::expected_value_mismatch);
 	ASSERT_EQ(*map.get(2), 5);

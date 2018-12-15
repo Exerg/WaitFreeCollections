@@ -58,3 +58,102 @@
 
     ## Exit on first error
     -Wfatal-errors
+
+[clang]
+    [cxx level 1 Release;Debug]
+    ## Base flags:
+    -pedantic
+    -Werror=pedantic
+    -Wall
+    -Wextra
+
+    [cxx level 2 Debug]
+    ## Extra flags:
+    -Wbad-function-cast
+    -Wcomplex-component-init
+    -Wconditional-uninitialized
+    -Wcovered-switch-default
+    -Wcstring-format-directive
+    -Wdelete-non-virtual-dtor
+    -Wdeprecated
+    -Wdollar-in-identifier-extension
+    -Wdouble-promotion
+    -Wduplicate-enum
+    -Wduplicate-method-arg
+    -Wembedded-directive
+    -Wexpansion-to-defined
+    -Wextended-offsetof
+    -Wfloat-conversion
+    -Wfloat-equal
+    -Wfor-loop-analysis
+    -Wformat-pedantic
+    -Wgnu
+    -Wimplicit-fallthrough
+    -Winfinite-recursion
+    -Winvalid-or-nonexistent-directory
+    -Wkeyword-macro
+    -Wmain
+    -Wmethod-signatures
+    -Wmicrosoft
+    -Wmismatched-tags
+    -Wmissing-field-initializers
+    -Wmissing-method-return-type
+    -Wmissing-prototypes
+    -Wmissing-variable-declarations
+    -Wnested-anon-types
+    -Wnon-virtual-dtor
+    -Wnonportable-system-include-path
+    -Wnull-pointer-arithmetic
+    -Wnullability-extension
+    -Wold-style-cast
+    -Woverriding-method-mismatch
+    -Wpacked
+    -Wpedantic
+    -Wpessimizing-move
+    -Wredundant-move
+    -Wreserved-id-macro
+    -Wself-assign
+    -Wself-move
+    -Wsemicolon-before-method-body
+    -Wshadow
+    -Wshadow-field
+    -Wshadow-field-in-constructor
+    -Wshadow-uncaptured-local
+    -Wshift-sign-overflow
+    -Wshorten-64-to-32
+    #-Wsign-compare
+    #-Wsign-conversion
+    -Wsigned-enum-bitfield
+    -Wstatic-in-inline
+    #-Wstrict-prototypes
+    #-Wstring-conversion
+    #-Wswitch-enum
+    -Wtautological-compare
+    -Wtautological-overlap-compare
+    -Wthread-safety
+    -Wundefined-reinterpret-cast
+    -Wuninitialized
+    #-Wunknown-pragmas
+    -Wunreachable-code
+    -Wunreachable-code-aggressive
+    #-Wunused
+    -Wunused-const-variable
+    -Wunused-lambda-capture
+    -Wunused-local-typedef
+    -Wunused-parameter
+    -Wunused-private-field
+    -Wunused-template
+    -Wunused-variable
+    -Wused-but-marked-unused
+    -Wzero-as-null-pointer-constant
+    -Wzero-length-array
+
+    ## Lifetime
+    -Wlifetime
+
+    ## Info flags
+    -Wcomma
+    -Wcomment
+
+    ## Exit on first error
+    -Wfatal-errors

@@ -61,8 +61,27 @@ TEST(WaitFreeHashMap, Update)
 	ASSERT_EQ(map.update(2, 0, 0), wfc::operation_result::expected_value_mismatch);
 	ASSERT_EQ(*map.get(2), 5);
 
-	/*map.remove(2); FIXME: uncomment when remove is implemented.
-	ASSERT_EQ(map.update(2, 0), wfc::operation_result::element_not_found);*/
+	map.remove(2);
+	ASSERT_EQ(map.update(2, 0), wfc::operation_result::element_not_found);
+}
+
+TEST(WaitFreeHashMap, Remove)
+{
+	wfc::unordered_map<std::size_t, std::size_t> map(4);
+
+	ASSERT_EQ(map.remove(0, 5), wfc::operation_result::element_not_found);
+
+	map.insert(0, 3);
+	map.insert(1, 2);
+
+	ASSERT_EQ(map.remove(0), wfc::operation_result::success);
+	ASSERT_EQ(map.remove(0), wfc::operation_result::element_not_found);
+	ASSERT_FALSE(map.get(0).has_value());
+
+	ASSERT_EQ(map.remove(1, 3), wfc::operation_result::expected_value_mismatch);
+	ASSERT_TRUE(map.get(1).has_value());
+	ASSERT_EQ(map.remove(1, 2), wfc::operation_result::success);
+	ASSERT_FALSE(map.get(1).has_value());
 }
 
 TEST(WaitFreeHashMap, FullHashMapUpdate)
@@ -84,6 +103,35 @@ TEST(WaitFreeHashMap, FullHashMapUpdate)
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
 		ASSERT_EQ(*map.get(static_cast<unsigned char>(i)), i * 2);
+	}
+}
+
+TEST(WaitFreeHashMap, FullHashMapRemove)
+{
+	wfc::unordered_map<unsigned char, std::size_t> map(4);
+
+	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
+	{
+		map.insert(static_cast<unsigned char>(i), i);
+	}
+
+	ASSERT_EQ(map.size(), std::numeric_limits<unsigned char>::max() + 1);
+
+	// remove half of the elements (alternate)
+	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
+	{
+		if (i % 2 == 0) {
+			ASSERT_EQ(map.remove(static_cast<unsigned char>(i), i), wfc::operation_result::success);
+		}
+	}
+
+	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
+	{
+		if (i % 2 == 0) {
+			ASSERT_FALSE(map.get(static_cast<unsigned char>(i)).has_value());
+		} else {
+			ASSERT_TRUE(map.get(static_cast<unsigned char>(i)).has_value());
+		}
 	}
 }
 

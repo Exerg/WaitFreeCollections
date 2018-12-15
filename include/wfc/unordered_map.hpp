@@ -317,6 +317,16 @@ namespace wfc
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
+	operation_result unordered_map<Key, Value, HashFunction>::remove(const Key& key, const Value& expected_value) {
+		return operation_result::element_not_found;
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	operation_result unordered_map<Key, Value, HashFunction>::remove(const Key& key) {
+		return operation_result::element_not_found;
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
 	template <typename VisitorFun>
 	void unordered_map<Key, Value, HashFunction>::visit(VisitorFun&& fun) noexcept(
 	    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>))

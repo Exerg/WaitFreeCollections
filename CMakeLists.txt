@@ -36,7 +36,8 @@ endif()
 if (BUILD_EXAMPLES)
     find_package(Threads REQUIRED)
 
-    ctulu_create_target(Example1 "WaitFreeHashMap" FILES ${example_dir}/main.cpp CXX 17 EXECUTABLE)
+    ctulu_create_target(Example1 "WaitFreeHashMap" FILES ${example_dir}/main.cpp CXX 17 EXECUTABLE W_LEVEL 2)
+    ctulu_target_warning_from_file(Example1 ${root_dir}/cmake/warnings.txt)
     target_link_libraries(Example1 ${CMAKE_THREAD_LIBS_INIT} WaitFreeHashMapLibrary)
 endif()
 
@@ -63,8 +64,9 @@ if (BUILD_TESTS)
     conan_check(REQUIRED)
     conan_cmake_run(CONANFILE .conanfile.txt BASIC_SETUP CMAKE_TARGETS BUILD missing)
 
-    ctulu_create_target(SingleThreadTests "WaitFreeHashMap" test/single_thread_test.cpp TEST CXX 17)
+    ctulu_create_target(SingleThreadTests "WaitFreeHashMap" test/single_thread_test.cpp TEST CXX 17 W_LEVEL 2)
+    ctulu_target_warning_from_file(SingleThreadTests ${root_dir}/cmake/warnings.txt)
     target_link_libraries(SingleThreadTests WaitFreeHashMapLibrary CONAN_PKG::gtest)
 endif()
 
-#set(CMAKE_VERBOSE_MAKEFILE 1)
+set(CMAKE_VERBOSE_MAKEFILE 1)

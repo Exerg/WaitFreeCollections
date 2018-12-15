@@ -1,0 +1,60 @@
+[gcc]
+    [cxx level 1 Debug;Release]
+    -pedantic
+    -Werror=pedantic
+    -Wall
+    -Wextra
+
+    [cxx level 2 Debug]
+    ## Extra flags:
+    -Wdouble-promotion
+    -Wnull-dereference
+    -Wimplicit-fallthrough
+    -Wif-not-aligned
+    -Wmissing-include-dirs
+    -Wswitch-bool
+    -Wswitch-unreachable
+    -Walloc-zero
+    -Wduplicated-branches
+    -Wduplicated-cond
+    -Wfloat-equal
+    -Wshadow
+    -Wundef
+    -Wexpansion-to-defined
+    #-Wunused-macros
+    -Wcast-qual
+    -Wcast-align
+    -Wwrite-strings
+    -Wconversion
+    -Wsign-conversion
+    -Wdate-time
+    -Wextra-semi
+    -Wlogical-op
+    -Wmissing-declarations
+    -Wredundant-decls
+    -Wrestrict
+    #-Winline
+    -Winvalid-pch
+    -Woverlength-strings
+    -Wformat=2
+    -Wformat-signedness
+    -Winit-self
+    -Wold-style-cast
+
+    ## Optimisation dependant flags
+    -Wstrict-overflow=5
+
+    ## Info flags
+    #-Winvalid-pch
+    #-Wvolatile-register-var
+    -Wdisabled-optimization
+    #-Woverlength-strings
+    #-Wunsuffixed-float-constants
+    #-Wvector-operation-performance
+
+    ## Apocalypse flags:
+    #-Wsystem-headers
+    #-Werror
+
+    ## Exit on first error
+    -Wfatal-errors

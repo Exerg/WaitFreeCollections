@@ -675,9 +675,7 @@ namespace wf
 				}
 				else
 				{
-					std::invoke(
-					    fun,
-					    std::pair<const hash_t&, const value_t&>(child.datanode_ptr->key, child.datanode_ptr->value));
+					std::invoke(fun, std::pair<key_t, value_t>(child.datanode_ptr->key, child.datanode_ptr->value));
 				}
 			}
 		}

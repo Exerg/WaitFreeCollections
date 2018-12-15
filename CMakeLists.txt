@@ -21,7 +21,7 @@ get_filename_component(test_dir        ${root_dir}/test        ABSOLUTE)
 get_filename_component(example_dir     ${root_dir}/example     ABSOLUTE)
 
 # set parameter INTERFACE since the library is header only.
-ctulu_create_target(WaitFreeHashMapLibrary "WaitFreeHashMap" INTERFACE_INCLUDES ${include_dir} CXX 17 INTERFACE)
+ctulu_create_target(WaitFreeHashMapLibrary "WaitFreeHashMap" INTERFACE_INCLUDES SYSTEM ${include_dir} CXX 17 INTERFACE)
 
 option(BUILD_EXAMPLES "Build project examples" OFF)
 option(BUILD_TESTS "Build project tests" OFF)
@@ -39,7 +39,7 @@ if (BUILD_EXAMPLES)
 
     ctulu_create_target(Example1 "WaitFreeHashMap" FILES ${example_dir}/main.cpp CXX 17 EXECUTABLE W_LEVEL 2)
     ctulu_target_warning_from_file(Example1 ${root_dir}/cmake/warnings.txt)
-    target_link_libraries(Example1 ${CMAKE_THREAD_LIBS_INIT} WaitFreeHashMapLibrary)
+    target_link_libraries(Example1 Threads::Threads WaitFreeHashMapLibrary)
 endif()
 
 if (BUILD_CLANG_FORMAT_TARGET)
@@ -70,4 +70,4 @@ if (BUILD_TESTS)
     target_link_libraries(SingleThreadTests WaitFreeHashMapLibrary CONAN_PKG::gtest)
 endif()
 
-set(CMAKE_VERBOSE_MAKEFILE 1)
+#set(CMAKE_VERBOSE_MAKEFILE 1)

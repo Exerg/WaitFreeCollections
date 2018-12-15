@@ -17,8 +17,8 @@ endif()
 
 get_filename_component(root_dir        ${CMAKE_SOURCE_DIR}     ABSOLUTE)
 get_filename_component(include_dir     ${root_dir}/include     ABSOLUTE)
-get_filename_component(test_dir        ${root_dir}/test        ABSOLUTE)
-get_filename_component(example_dir     ${root_dir}/example     ABSOLUTE)
+get_filename_component(test_dir        ${root_dir}/tests       ABSOLUTE)
+get_filename_component(example_dir     ${root_dir}/examples    ABSOLUTE)
 
 # set parameter INTERFACE since the library is header only.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -42,9 +42,9 @@ endif()
 if (BUILD_EXAMPLES)
     find_package(Threads REQUIRED)
 
-    ctulu_create_target(Example1 "WaitFreeHashMap" FILES ${example_dir}/main.cpp CXX 17 EXECUTABLE W_LEVEL 2)
-    ctulu_target_warning_from_file(Example1 ${root_dir}/cmake/warnings.txt)
-    target_link_libraries(Example1 Threads::Threads WaitFreeHashMapLibrary)
+    ctulu_create_target(UnorderedMapExample1 "WaitFreeHashMap" FILES ${example_dir}/unordered_map_example.cpp CXX 17 EXECUTABLE W_LEVEL 2)
+    ctulu_target_warning_from_file(UnorderedMapExample1 ${root_dir}/cmake/warnings.txt)
+    target_link_libraries(UnorderedMapExample1 Threads::Threads WaitFreeHashMapLibrary)
 endif()
 
 if (BUILD_CLANG_FORMAT_TARGET)
@@ -70,7 +70,7 @@ if (BUILD_TESTS)
     conan_check(REQUIRED)
     conan_cmake_run(CONANFILE .conanfile.txt BASIC_SETUP CMAKE_TARGETS BUILD missing)
 
-    ctulu_create_target(SingleThreadTests "WaitFreeHashMap" test/single_thread_test.cpp TEST CXX 17 W_LEVEL 2)
+    ctulu_create_target(SingleThreadTests "WaitFreeHashMap" tests/unordered_map/single_thread_test.cpp TEST CXX 17 W_LEVEL 2)
     ctulu_target_warning_from_file(SingleThreadTests ${root_dir}/cmake/warnings.txt)
     target_link_libraries(SingleThreadTests WaitFreeHashMapLibrary CONAN_PKG::gtest)
 endif()

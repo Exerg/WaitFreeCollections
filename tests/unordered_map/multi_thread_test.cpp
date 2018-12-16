@@ -157,7 +157,7 @@ TEST_F(WaitFreeHashMapMultiThreadTest, RemoveConflict)
 			std::size_t idx = i % 8;
 
 			for (std::size_t j = block_low(idx, nbr_threads / 2, map_size),
-					     n = block_high(idx, nbr_threads / 2, map_size);
+			                 n = block_high(idx, nbr_threads / 2, map_size);
 			     j <= n;
 			     ++j)
 			{

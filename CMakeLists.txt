@@ -17,7 +17,7 @@ endif()
 
 get_filename_component(root_dir        ${CMAKE_SOURCE_DIR}     ABSOLUTE)
 get_filename_component(include_dir     ${root_dir}/include     ABSOLUTE)
-get_filename_component(test_dir        ${root_dir}/tests       ABSOLUTE)
+get_filename_component(tests_dir       ${root_dir}/tests       ABSOLUTE)
 get_filename_component(example_dir     ${root_dir}/examples    ABSOLUTE)
 
 # set parameter INTERFACE since the library is header only.
@@ -70,11 +70,11 @@ if (BUILD_TESTS)
     conan_check(REQUIRED)
     conan_cmake_run(CONANFILE .conanfile.txt BASIC_SETUP CMAKE_TARGETS BUILD missing)
 
-    ctulu_create_target(UnorderedMapSingleThreadsTests "WaitFreeCollections" tests/unordered_map/single_thread_test.cpp TEST CXX 17 W_LEVEL 2)
-    ctulu_target_warning_from_file(UnorderedMapSingleThreadsTests ${root_dir}/cmake/warnings.txt)
-    target_link_libraries(UnorderedMapSingleThreadsTests WaitFreeCollections CONAN_PKG::gtest)
+    ctulu_create_target(UnorderedMapTests "WaitFreeCollections" DIRS ${tests_dir}/unordered_map/ TEST CXX 17 W_LEVEL 2)
+    ctulu_target_warning_from_file(UnorderedMapTests ${root_dir}/cmake/warnings.txt)
+    target_link_libraries(UnorderedMapTests WaitFreeCollections CONAN_PKG::gtest)
 
-    ctulu_create_target(UtilityTests "WaitFreeCollections" DIRS ${test_dir}/utility/ TEST CXX 17 W_LEVEL 2)
+    ctulu_create_target(UtilityTests "WaitFreeCollections" DIRS ${tests_dir}/utility/ TEST CXX 17 W_LEVEL 2)
     ctulu_target_warning_from_file(UtilityTests ${root_dir}/cmake/warnings.txt)
     target_link_libraries(UtilityTests WaitFreeCollections CONAN_PKG::gtest)
 endif()

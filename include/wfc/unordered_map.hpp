@@ -36,12 +36,13 @@ namespace wfc
 	}
 
 	template <typename Key>
-	class identity_hash // FIXME: Size doesn't match
+	class identity_hash
 	{
 	public:
-		std::size_t operator()(const Key& k) const noexcept
+		static_assert(std::is_fundamental_v<Key>, "Key should be a fundamental type to use the default hash");
+		Key operator()(const Key& k) const noexcept
 		{
-			return static_cast<std::size_t>(k);
+			return k;
 		}
 	};
 
@@ -173,7 +174,7 @@ namespace wfc
 	template <typename Key, typename Value, typename HashFunction>
 	operation_result unordered_map<Key, Value, HashFunction>::insert(const Key& key, const Value& value)
 	{
-		std::size_t nbr_bits_to_shift = log2_of_power_of_two<hash_size_in_bits>(m_arrayLength);
+		std::size_t nbr_bits_to_shift = log2_of_power_of_two(m_arrayLength);
 
 		std::size_t position;
 		std::size_t failCount;
@@ -258,7 +259,7 @@ namespace wfc
 	template <typename Key, typename Value, typename HashFunction>
 	std::optional<Value> unordered_map<Key, Value, HashFunction>::get(const Key& key)
 	{
-		std::size_t array_pow = log2_of_power_of_two<hash_size_in_bits>(m_arrayLength);
+		std::size_t array_pow = log2_of_power_of_two(m_arrayLength);
 
 		std::size_t position;
 		node_union local{&m_head};
@@ -458,7 +459,7 @@ namespace wfc
 	                                                                                CmpFun&& compare_expected_value,
 	                                                                                AllocFun&& replacing_node)
 	{
-		std::size_t array_pow = log2_of_power_of_two<hash_size_in_bits>(m_arrayLength);
+		std::size_t array_pow = log2_of_power_of_two(m_arrayLength);
 
 		std::size_t position;
 		node_union local{&m_head};

@@ -118,3 +118,67 @@ TEST_F(WaitFreeHashMapMultiThreadTest, UpdateConflict)
 		ASSERT_EQ(map.get(static_cast<unsigned char>(i)).value(), 2 * (i + 1));
 	}
 }
+
+TEST_F(WaitFreeHashMapMultiThreadTest, RemoveNoConflict)
+{
+	constexpr std::size_t nbr_threads = 8;
+
+	for (std::size_t i = 0; i < nbr_threads; ++i)
+	{
+		threads.emplace_back([this, i]() {
+			futur.wait();
+
+			for (std::size_t j = block_low(i, nbr_threads, map_size), n = block_high(i, nbr_threads, map_size); j <= n;
+			     ++j)
+			{
+				ASSERT_EQ(map.remove(static_cast<unsigned char>(j), j + 1), wfc::operation_result::success);
+			}
+		});
+	}
+
+	ready_promise.set_value();
+	wait_threads();
+
+	for (std::size_t i = 0; i < map_size; ++i)
+	{
+		ASSERT_FALSE(map.get(static_cast<unsigned char>(i)).has_value());
+	}
+}
+
+TEST_F(WaitFreeHashMapMultiThreadTest, RemoveConflict)
+{
+	constexpr std::size_t nbr_threads = 16;
+	std::array<std::atomic<int>, nbr_threads / 2> fails{};
+
+	for (std::size_t i = 0; i < nbr_threads; ++i)
+	{
+		threads.emplace_back([this, i, &fails]() {
+			futur.wait();
+			std::size_t idx = i % 8;
+
+			for (std::size_t j = block_low(idx, nbr_threads / 2, map_size),
+					     n = block_high(idx, nbr_threads / 2, map_size);
+			     j <= n;
+			     ++j)
+			{
+				if (map.remove(static_cast<unsigned char>(j), j + 1) != wfc::operation_result::success)
+				{
+					++fails[idx];
+				}
+			}
+		});
+	}
+
+	ready_promise.set_value();
+	wait_threads();
+
+	for (std::size_t i = 0; i < fails.size(); ++i)
+	{
+		ASSERT_EQ(fails[i].load(), block_size(i, nbr_threads / 2, map_size));
+	}
+
+	for (std::size_t i = 0; i < map_size; ++i)
+	{
+		ASSERT_FALSE(map.get(static_cast<unsigned char>(i)).has_value());
+	}
+}

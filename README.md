@@ -21,7 +21,7 @@
     </tr>
 </table>
 
-A header-only library providing wait-free collections such as hash map and linked list.
+A header-only library providing wait-free collections such as hash map and double ended queue (deque).
 
 ## Wait-Free Hash Map
 
@@ -31,7 +31,11 @@ An implementation of a wait-free hash map as described in the article
 > International Journal of Parallel Programming, t. 45, n o 3, p. 421-448, 2017, issn : 1573-7640. <br>
 > doi : https://doi.org/10.1007/s10766-015-0376-3
 
-See example in `example` folder.
+See [unordered_map example](./examples/unordered_map_example.cpp) in `examples` folder.
+
+## Double ended queue (Deque)
+
+WIP
 
 ## Copyright
 

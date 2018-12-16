@@ -1,6 +1,9 @@
 #ifndef WFC_MATH_HPP
 #define WFC_MATH_HPP
 
+#include <limits>
+#include <type_traits>
+
 namespace wfc
 {
 	namespace details
@@ -29,16 +32,19 @@ namespace wfc
 		}
 	} // namespace details
 
-	template <std::size_t HashSizeInBit, typename T>
+	template <typename T>
 	constexpr std::size_t log2_of_power_of_two(T x) noexcept;
 
 	template <typename T>
 	constexpr bool is_power_of_two(T nbr) noexcept;
 
-	template <std::size_t HashSizeInBit, typename T>
+	template <typename T>
 	constexpr std::size_t log2_of_power_of_two(T x) noexcept
 	{
-		return HashSizeInBit - details::clz(x) - 1UL;
+		static_assert(std::is_integral_v<T>, "T should be an integral type");
+		assert(is_power_of_two(x));
+
+		return sizeof(T) * std::numeric_limits<unsigned char>::digits - details::clz(x) - 1UL;
 	}
 
 	template <typename T>

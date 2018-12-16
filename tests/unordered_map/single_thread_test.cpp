@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <limits>
+
 #include <wfc/unordered_map.hpp>
 
 TEST(WaitFreeHashMap, Construction)
@@ -145,14 +147,15 @@ TEST(WaitFreeHashMap, FullHashMapGet)
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
-		map.insert(static_cast<unsigned char>(i), static_cast<unsigned char>(i));
+		ASSERT_EQ(map.insert(static_cast<unsigned char>(i), static_cast<unsigned char>(i)),
+		          wfc::operation_result::success);
 	}
 
 	ASSERT_EQ(map.size(), std::numeric_limits<unsigned char>::max() + 1);
 
 	for (std::size_t i = 0; i <= std::numeric_limits<unsigned char>::max(); ++i)
 	{
-		unsigned char value = *map.get(static_cast<unsigned char>(i));
+		unsigned char value = map.get(static_cast<unsigned char>(i)).value();
 		ASSERT_EQ(value, i);
 	}
 }

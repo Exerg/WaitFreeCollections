@@ -73,6 +73,10 @@ if (BUILD_TESTS)
     ctulu_create_target(UnorderedMapSingleThreadsTests "WaitFreeCollections" tests/unordered_map/single_thread_test.cpp TEST CXX 17 W_LEVEL 2)
     ctulu_target_warning_from_file(UnorderedMapSingleThreadsTests ${root_dir}/cmake/warnings.txt)
     target_link_libraries(UnorderedMapSingleThreadsTests WaitFreeCollections CONAN_PKG::gtest)
+
+    ctulu_create_target(UtilityTests "WaitFreeCollections" DIRS ${test_dir}/utility/ TEST CXX 17 W_LEVEL 2)
+    ctulu_target_warning_from_file(UtilityTests ${root_dir}/cmake/warnings.txt)
+    target_link_libraries(UtilityTests WaitFreeCollections CONAN_PKG::gtest)
 endif()
 
 #set(CMAKE_VERBOSE_MAKEFILE 1)

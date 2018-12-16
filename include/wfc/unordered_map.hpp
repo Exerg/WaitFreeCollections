@@ -36,12 +36,13 @@ namespace wfc
 	}
 
 	template <typename Key>
-	class identity_hash // FIXME: Size doesn't match
+	class identity_hash
 	{
 	public:
-		std::size_t operator()(const Key& k) const noexcept
+		static_assert(std::is_fundamental_v<Key>, "Key should be a fundamental type to use the default hash");
+		Key operator()(const Key& k) const noexcept
 		{
-			return static_cast<std::size_t>(k);
+			return k;
 		}
 	};
 

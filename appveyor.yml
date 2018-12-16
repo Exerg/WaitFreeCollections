@@ -29,5 +29,7 @@ build_script:
 
 test_script:
     - ${APPVEYOR_BUILD_FOLDER}/debug_build/bin/UnorderedMapSingleThreadsTests
+    - ${APPVEYOR_BUILD_FOLDER}/debug_build/bin/UtilityTests
     - ${APPVEYOR_BUILD_FOLDER}/release_build/bin/UnorderedMapSingleThreadsTests
+    - ${APPVEYOR_BUILD_FOLDER}/release_build/bin/UtilityTests
 

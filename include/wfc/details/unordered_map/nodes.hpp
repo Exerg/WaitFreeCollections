@@ -187,6 +187,7 @@ namespace wfc
 						delete child.datanode_ptr;
 					}
 				}
+				m_ptr[i].store({});
 			}
 
 			delete[] m_ptr;

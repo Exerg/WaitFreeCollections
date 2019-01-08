@@ -182,3 +182,74 @@ TEST_F(WaitFreeHashMapMultiThreadTest, RemoveConflict)
 		ASSERT_FALSE(map.get(static_cast<unsigned char>(i)).has_value());
 	}
 }
+
+TEST_F(WaitFreeHashMapMultiThreadTest, MixedOperation)
+{
+	wfc::unordered_map<unsigned char, std::size_t> custom_map{4};
+	constexpr std::size_t nbr_threads = 3;
+	std::array<std::atomic_bool, map_size - 1> updated{};
+	std::array<std::atomic_bool, map_size - 1> removed{};
+
+	for (std::size_t i = 0; i < nbr_threads; ++i)
+	{
+		threads.emplace_back([this, &custom_map, i]() {
+			futur.wait();
+			std::size_t idx = i;
+
+			for (std::size_t j = block_low(idx, nbr_threads, map_size - 1),
+			                 n = block_high(idx, nbr_threads, map_size - 1);
+			     j <= n;
+			     ++j)
+			{
+				ASSERT_EQ(custom_map.insert(static_cast<unsigned char>(j), 2 * j), wfc::operation_result::success);
+			}
+
+			//printf("j: %zu, n: %zu\n", block_low(i, nbr_threads, map_size), block_high(i, nbr_threads, map_size));
+		});
+
+		threads.emplace_back([this, &custom_map, i, &updated]() {
+			futur.wait();
+			std::size_t idx = i;
+
+			for (std::size_t j = block_low(idx, nbr_threads, map_size - 1),
+			                 n = block_high(idx, nbr_threads, map_size - 1);
+			     j <= n;
+			     ++j)
+			{
+				if (custom_map.update(static_cast<unsigned char>(j), 4 * j) == wfc::operation_result::success)
+				{
+					updated[j] = true;
+				}
+			}
+		});
+
+		threads.emplace_back([this, &custom_map, i, &removed]() {
+			futur.wait();
+			std::size_t idx = i;
+
+			for (std::size_t j = block_low(idx, nbr_threads, map_size - 1),
+			                 n = block_high(idx, nbr_threads, map_size - 1);
+			     j <= n;
+			     ++j)
+			{
+				if (custom_map.remove(static_cast<unsigned char>(j)) == wfc::operation_result::success)
+				{
+					removed[j] = true;
+				}
+			}
+		});
+	}
+
+	ready_promise.set_value();
+	wait_threads();
+
+	for (std::size_t i = 0; i < map_size - 1; ++i) {
+		if (updated[i] && !removed[i]) {
+			ASSERT_EQ(custom_map.get(static_cast<unsigned char>(i)).value(), 4 * i);
+		} else if (removed[i]) {
+			ASSERT_FALSE(custom_map.get(static_cast<unsigned char>(i)).has_value());
+		} else {
+			ASSERT_EQ(custom_map.get(static_cast<unsigned char>(i)).value(), 2 * i);
+		}
+	}
+}

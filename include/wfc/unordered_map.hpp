@@ -220,25 +220,23 @@ namespace wfc
 					{
 						++failCount;
 						node = node2;
+						continue;
+					}
+					else if (node.datanode_ptr->hash == fullhash)
+					{
+						return operation_result::already_present;
 					}
 					else
 					{
-						if (node.datanode_ptr->hash == fullhash)
+						node = expand_node(local, position, r);
+						if (is_array_node(node))
 						{
-							return operation_result::already_present;
+							local = node;
+							break;
 						}
 						else
 						{
-							node = expand_node(local, position, r);
-							if (is_array_node(node))
-							{
-								local = node;
-								break;
-							}
-							else
-							{
-								++failCount;
-							}
+							++failCount;
 						}
 					}
 				}
@@ -378,7 +376,7 @@ namespace wfc
 	auto unordered_map<Key, Value, HashFunction>::allocate_node(hash_t hash, key_t key, value_t value) const
 	    -> node_union
 	{
-		return node_union{new (std::align_val_t{8}) node_t{hash, key, value}};
+		return node_union{new /*(std::align_val_t{8})*/ node_t{hash, key, value}};
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
@@ -400,19 +398,20 @@ namespace wfc
 			return value;
 		}
 
-		node_union array_node{new (std::align_val_t{8}) arraynode_t{m_arrayLength}};
+		if (value.datanode_ptr != nullptr) {
+			node_union array_node{new /*(std::align_val_t{8})*/ arraynode_t{m_arrayLength}};
 
-		std::size_t new_pos = value.datanode_ptr->hash >> (m_arrayLength + level) & (m_arrayLength - 1);
-		unmark_datanode(value);
+			std::size_t new_pos = value.datanode_ptr->hash >> (m_arrayLength + level) & (m_arrayLength - 1);
+			unmark_datanode(value);
 
-		(*array_node.arraynode_ptr)[new_pos] = value;
-		mark_arraynode(array_node);
+			(*array_node.arraynode_ptr)[new_pos] = value;
+			mark_arraynode(array_node);
 
-		if (!node_atomic.compare_exchange_weak(old_value, array_node))
-		{
-			array_node = sanitize_ptr(array_node);
-			(*array_node.arraynode_ptr)[new_pos] = node_union{};
-			delete array_node.arraynode_ptr;
+			if (!node_atomic.compare_exchange_weak(old_value, array_node)) {
+				array_node = sanitize_ptr(array_node);
+				(*array_node.arraynode_ptr)[new_pos] = node_union{};
+				delete array_node.arraynode_ptr;
+			}
 		}
 
 		return node_atomic.load();

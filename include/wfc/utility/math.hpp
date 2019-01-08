@@ -81,4 +81,7 @@ namespace wfc
 		return nbr && !(nbr & (nbr - 1));
 	}
 } // namespace wfc
+
+#undef WFC__has_builtin
+
 #endif // WFC_MATH_HPP

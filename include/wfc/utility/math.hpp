@@ -16,7 +16,7 @@ namespace wfc
 	{
 #if WFC__has_builtin(__builtin_clz) && WFC__has_builtin(__builtin_clzl) && WFC__has_builtin(__builtin_clzll)
 		template <typename T>
-		T clz(T x) // FIXME
+		T clz(T x)
 		{
 			assert(x != 0); // clz is undefined for 0
 
@@ -39,7 +39,7 @@ namespace wfc
 		}
 #else
 		template <typename T>
-		T clz(T x) // FIXME
+		T clz(T x)
 		{
 			static_assert(std::is_unsigned_v<T>, "T should be unsigned");
 

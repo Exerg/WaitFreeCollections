@@ -146,12 +146,13 @@ namespace wfc
 		/**
 		 * Applies functor on every element in the map.
 		 * This function is NOT thread safe.
-		 * @tparam VisitorFun The type should be compatible with this prototype void(const std::pair<const hash_t, value_t>&);
+		 * @tparam VisitorFun The type should be compatible with this prototype
+		 * 	void(const std::pair<hash_t, value_t>&);
 		 * @param fun
 		 */
 		template <typename VisitorFun>
 		void visit(VisitorFun&& fun) noexcept(
-		    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>)); // FIXME
+		    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>));
 
 		/**
 		 * Returns the number of elements into the collection

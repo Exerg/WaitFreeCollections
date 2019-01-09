@@ -7,7 +7,7 @@
 
 #include <wfc/unordered_map.hpp>
 
-class WaitFreeHashMapMultiThreadTest : public ::testing::Test
+class WaitFreeHashMapMultiThreadTest : public ::testing::TestWithParam<int>
 {
 protected:
 	void SetUp() override
@@ -51,10 +51,10 @@ protected:
 	std::vector<std::thread> threads;
 	std::shared_future<void> futur;
 	std::promise<void> ready_promise;
-	wfc::unordered_map<unsigned char, std::size_t> map{4};
+	wfc::unordered_map<unsigned char, std::size_t> map{4, 16, 65535};
 };
 
-TEST_F(WaitFreeHashMapMultiThreadTest, UpdateNoConflict)
+TEST_P(WaitFreeHashMapMultiThreadTest, UpdateNoConflict)
 {
 	constexpr std::size_t nbr_threads = 8;
 
@@ -81,7 +81,7 @@ TEST_F(WaitFreeHashMapMultiThreadTest, UpdateNoConflict)
 	}
 }
 
-TEST_F(WaitFreeHashMapMultiThreadTest, UpdateConflict)
+TEST_P(WaitFreeHashMapMultiThreadTest, UpdateConflict)
 {
 	constexpr std::size_t nbr_threads = 16;
 	std::array<std::atomic<int>, nbr_threads / 2> fails{};
@@ -119,7 +119,7 @@ TEST_F(WaitFreeHashMapMultiThreadTest, UpdateConflict)
 	}
 }
 
-TEST_F(WaitFreeHashMapMultiThreadTest, RemoveNoConflict)
+TEST_P(WaitFreeHashMapMultiThreadTest, RemoveNoConflict)
 {
 	constexpr std::size_t nbr_threads = 8;
 
@@ -145,7 +145,7 @@ TEST_F(WaitFreeHashMapMultiThreadTest, RemoveNoConflict)
 	}
 }
 
-TEST_F(WaitFreeHashMapMultiThreadTest, RemoveConflict)
+TEST_P(WaitFreeHashMapMultiThreadTest, RemoveConflict)
 {
 	constexpr std::size_t nbr_threads = 16;
 	std::array<std::atomic<int>, nbr_threads / 2> fails{};
@@ -183,9 +183,9 @@ TEST_F(WaitFreeHashMapMultiThreadTest, RemoveConflict)
 	}
 }
 
-TEST_F(WaitFreeHashMapMultiThreadTest, MixedOperation)
+TEST_P(WaitFreeHashMapMultiThreadTest, MixedOperation)
 {
-	wfc::unordered_map<unsigned char, std::size_t> custom_map{4};
+	wfc::unordered_map<unsigned char, std::size_t> custom_map{4, 16, 65535};
 	constexpr std::size_t nbr_threads = 3;
 	std::array<std::atomic_bool, map_size - 1> updated{};
 	std::array<std::atomic_bool, map_size - 1> removed{};
@@ -251,3 +251,5 @@ TEST_F(WaitFreeHashMapMultiThreadTest, MixedOperation)
 		}
 	}
 }
+
+INSTANTIATE_TEST_CASE_P(Instantiation, WaitFreeHashMapMultiThreadTest, ::testing::Range(1, 100),);

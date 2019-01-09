@@ -16,11 +16,12 @@ TEST(Utilty, Log2OfPowerOfTwo)
 }
 
 #ifndef NDEBUG
-#define Log2OfPowerOfTwoDeath Log2OfPowerOfTwoDeath
+#	define Log2OfPowerOfTwoDeath Log2OfPowerOfTwoDeath
 #else
-#define Log2OfPowerOfTwoDeath DISABLED_Log2OfPowerOfTwoDeath
+#	define Log2OfPowerOfTwoDeath DISABLED_Log2OfPowerOfTwoDeath
 #endif
 
-TEST(Utility, Log2OfPowerOfTwoDeath) {
+TEST(Utility, Log2OfPowerOfTwoDeath)
+{
 	EXPECT_DEATH(wfc::log2_of_power_of_two(3U), "");
 }

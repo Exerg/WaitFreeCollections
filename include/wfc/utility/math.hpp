@@ -5,9 +5,9 @@
 #include <type_traits>
 
 #ifndef __has_builtin
-	#define WFC__has_builtin(x) 0
+#	define WFC__has_builtin(x) 0
 #else
-#define WFC__has_builtin(x) __has_builtin(x)
+#	define WFC__has_builtin(x) __has_builtin(x)
 #endif
 
 namespace wfc
@@ -47,8 +47,10 @@ namespace wfc
 
 			T result = 0;
 
-			for (std::size_t i = 0; i < std::numeric_limits<T>::digits; ++i) {
-				if ((mask & x) != 0) {
+			for (std::size_t i = 0; i < std::numeric_limits<T>::digits; ++i)
+			{
+				if ((mask & x) != 0)
+				{
 					return result;
 				}
 				++result;

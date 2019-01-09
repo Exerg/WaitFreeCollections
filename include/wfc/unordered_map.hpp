@@ -54,7 +54,7 @@ namespace wfc
 		using hash_t = std::invoke_result_t<HashFunction, Key>;
 		using value_t = Value;
 
-		explicit unordered_map(std::size_t log_bucket_count, std::size_t fail_count = 8);
+		explicit unordered_map(std::size_t log_bucket_count, std::size_t max_fail_count = 8);
 		unordered_map(const unordered_map&) = delete;
 		~unordered_map() noexcept = default;
 
@@ -151,17 +151,17 @@ namespace wfc
 		arraynode_t m_head;
 		std::size_t m_head_size;
 		std::size_t m_arrayLength;
-		std::size_t m_failed_count;
+		std::size_t m_max_fail_count;
 		std::atomic<std::size_t> m_size;
 		static constexpr std::size_t hash_size_in_bits = sizeof(hash_t) * std::numeric_limits<unsigned char>::digits;
 	};
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t log_bucket_count, std::size_t failed_count)
+	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t log_bucket_count, std::size_t max_fail_count)
 	    : m_head(1UL << log_bucket_count)
 	    , m_head_size(1UL << log_bucket_count)
 	    , m_arrayLength(log_bucket_count)
-	    , m_failed_count(failed_count)
+	    , m_max_fail_count(max_fail_count)
 	    , m_size(0UL)
 	{
 		static_assert(std::atomic<std::size_t>::is_always_lock_free, "Atomic implementation is not lock free");
@@ -179,7 +179,7 @@ namespace wfc
 		std::size_t nbr_bits_to_shift = log2_of_power_of_two(m_arrayLength);
 
 		std::size_t position;
-		std::size_t failCount;
+		std::size_t fail_count;
 		node_union local{&m_head};
 		mark_arraynode(local);
 
@@ -188,13 +188,13 @@ namespace wfc
 
 		for (std::size_t r = 0; r < hash_size_in_bits - nbr_bits_to_shift; r += nbr_bits_to_shift)
 		{
-			failCount = 0;
+			fail_count = 0;
 			std::tie(position, hash) = compute_pos_and_hash(nbr_bits_to_shift, hash, r);
 			node_union node = get_node(local, position);
 
 			while (true)
 			{
-				if (failCount > m_failed_count)
+				if (fail_count > m_max_fail_count)
 				{
 					node = mark_datanode(local, position);
 				}
@@ -220,7 +220,7 @@ namespace wfc
 					node_union node2 = get_node(local, position);
 					if (node.ptr_int != node2.ptr_int)
 					{
-						++failCount;
+						++fail_count;
 						node = node2;
 					}
 					else
@@ -239,7 +239,7 @@ namespace wfc
 							}
 							else
 							{
-								++failCount;
+								++fail_count;
 							}
 						}
 					}
@@ -558,13 +558,13 @@ namespace wfc
 	                                                                  size_t r,
 	                                                                  node_union& node)
 	{
-		std::size_t failCount = 0;
+		std::size_t fail_count = 0;
 		do
 		{
 			node = get_node(local, position);
-			++failCount;
+			++fail_count;
 
-			if (failCount > m_failed_count)
+			if (fail_count > m_max_fail_count)
 			{
 				mark_datanode(node);
 				local = expand_node(local, position, r);

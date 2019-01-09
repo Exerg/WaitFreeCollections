@@ -58,6 +58,7 @@ namespace wfc
 		 * Constructs a wait free hash map.
 		 *
 		 * @details This map could be seen as a n-ary tree, (except that the head has 2^n children)
+		 * In the case of this map, n is array_length.
 		 * Each node of this map could be an array or a datanode. If two datanodes should go in the same place.
 		 * Then the existing datanode is transformed into an arraynode to allow the insertion of the two datanodes.
 		 * It may be noted that this process of extending the map will be repeted until the hash of the nodes differ.

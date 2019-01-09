@@ -27,16 +27,26 @@ namespace wfc
 		already_present /**< the key is already present in the hash map */
 	};
 
+	/**
+	 * Helper function that returns true if the operation_result is a success.
+	 */
 	[[nodiscard]] constexpr bool succeeded(operation_result e) noexcept
 	{
 		return e == operation_result::success;
 	}
 
+	/**
+	 * Helper function that returns true if the operation_result correspond to a failed state.
+	 */
 	[[nodiscard]] constexpr bool failed(operation_result e) noexcept
 	{
 		return !succeeded(e);
 	}
 
+	/**
+	 * Default hash function. This function is the identity.
+	 * @tparam Key - Type of the key
+	 */
 	template <typename Key>
 	class identity_hash
 	{
@@ -48,6 +58,21 @@ namespace wfc
 		}
 	};
 
+	/**
+	 * A wait free hash map
+	 *
+	 * @details This map could be seen as a n-ary tree, (except that the head has 2^n children)
+	 * In the case of this map, n is array_length.
+	 * Each node of this map could be an array or a datanode. If two datanodes should go in the same place
+	 * the existing datanode is transformed into an arraynode to allow the insertion of the two datanodes.
+	 * It is noteworthy that this expending of the map will be repeated until the hash of the two nodes differ.
+	 *
+	 * @tparam Key type of the key in the map
+	 * @tparam Value type of the value in the map
+	 * @tparam HashFunction Functor that holds the hash function to be used on keys.
+	 * The hash function has to be collision-free.
+	 * Consequently, output size should be at least as large as input size.
+	 */
 	template <typename Key, typename Value, typename HashFunction = identity_hash<Key>>
 	class unordered_map
 	{
@@ -58,12 +83,6 @@ namespace wfc
 
 		/**
 		 * Constructs a wait free hash map.
-		 *
-		 * @details This map could be seen as a n-ary tree, (except that the head has 2^n children)
-		 * In the case of this map, n is array_length.
-		 * Each node of this map could be an array or a datanode. If two datanodes should go in the same place.
-		 * Then the existing datanode is transformed into an arraynode to allow the insertion of the two datanodes.
-		 * It may be noted that this process of extending the map will be repeted until the hash of the nodes differ.
 		 *
 		 * @param array_length size of the array containing the elements (head size is 2^array_length)
 		 * @param max_fail_count this value should match to the number of threads using this map
@@ -77,8 +96,19 @@ namespace wfc
 
 		unordered_map& operator=(const unordered_map&) = delete;
 
+		/**
+		 * Inserts the key and the value in the hash map.
+		 *
+		 * @return Returns operation_result::already_present if the key is already in the map.
+		 * Otherwise it returns operation_result::success
+		 */
 		operation_result insert(const Key& key, const Value& value);
 
+		/**
+		 * Tries to retrieve the value associated to the key.
+		 *
+		 * @return an empty optional if the key in not in the map. The associated value otherwise.
+		 */
 		std::optional<Value> get(const Key& key);
 
 		/**
@@ -121,18 +151,22 @@ namespace wfc
 		/**
 		 * Applies functor on every element in the map.
 		 * This function is NOT thread safe.
-		 * @tparam VisitorFun The type should be compatible with this prototype void(const std::pair<const hash_t, value_t>&);
+		 * @tparam VisitorFun The type should be compatible with this prototype
+		 * 	void(const std::pair<hash_t, value_t>&);
 		 * @param fun
 		 */
 		template <typename VisitorFun>
 		void visit(VisitorFun&& fun) noexcept(
-		    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>)); // FIXME
+		    noexcept(std::is_nothrow_invocable_v<VisitorFun, std::pair<key_t, value_t>>));
 
 		/**
 		 * Returns the number of elements into the collection
 		 */
 		std::size_t size() const noexcept;
 
+		/**
+		 * Returns true if the map is empty, false otherwise.
+		 */
 		bool is_empty() const noexcept;
 
 	private:

@@ -54,7 +54,18 @@ namespace wfc
 		using hash_t = std::invoke_result_t<HashFunction, Key>;
 		using value_t = Value;
 
-		explicit unordered_map(std::size_t log_bucket_count, std::size_t max_fail_count = 8);
+		/**
+		 * Constructs a wait free hash map.
+		 *
+		 * @details This map could be seen as a n-ary tree, (except that the head has 2^n children)
+		 * Each node of this map could be an array or a datanode. If two datanodes should go in the same place.
+		 * Then the existing datanode is transformed into an arraynode to allow the insertion of the two datanodes.
+		 * It may be noted that this process of extending the map will be repeted until the hash of the nodes differ.
+		 *
+		 * @param array_length size of the array containing the elements (head size is 2^array_length)
+		 * @param max_fail_count this value should match to the number of threads using this map
+		 */
+		explicit unordered_map(std::size_t array_length, std::size_t max_fail_count = 8);
 		unordered_map(const unordered_map&) = delete;
 		~unordered_map() noexcept = default;
 
@@ -157,17 +168,17 @@ namespace wfc
 	};
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t log_bucket_count, std::size_t max_fail_count)
-	    : m_head(1UL << log_bucket_count)
-	    , m_head_size(1UL << log_bucket_count)
-	    , m_arrayLength(log_bucket_count)
+	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t array_length, std::size_t max_fail_count)
+	    : m_head(1UL << array_length)
+	    , m_head_size(1UL << array_length)
+	    , m_arrayLength(array_length)
 	    , m_max_fail_count(max_fail_count)
 	    , m_size(0UL)
 	{
 		static_assert(std::atomic<std::size_t>::is_always_lock_free, "Atomic implementation is not lock free");
 		static_assert(std::atomic<node_union>::is_always_lock_free, "Atomic implementation is not lock free");
 
-		if (!is_power_of_two(log_bucket_count))
+		if (!is_power_of_two(array_length))
 		{
 			throw std::runtime_error("Array length should be a power of two");
 		}

@@ -54,7 +54,7 @@ namespace wfc
 		using hash_t = std::invoke_result_t<HashFunction, Key>;
 		using value_t = Value;
 
-		explicit unordered_map(std::size_t log_bucket_count, std::size_t fail_count);
+		explicit unordered_map(std::size_t log_bucket_count, std::size_t fail_count = 8);
 		unordered_map(const unordered_map&) = delete;
 		~unordered_map() noexcept = default;
 

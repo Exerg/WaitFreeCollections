@@ -203,8 +203,6 @@ TEST_F(WaitFreeHashMapMultiThreadTest, MixedOperation)
 			{
 				ASSERT_EQ(custom_map.insert(static_cast<unsigned char>(j), 2 * j), wfc::operation_result::success);
 			}
-
-			//printf("j: %zu, n: %zu\n", block_low(i, nbr_threads, map_size), block_high(i, nbr_threads, map_size));
 		});
 
 		threads.emplace_back([this, &custom_map, i, &updated]() {

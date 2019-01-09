@@ -180,40 +180,51 @@ TEST(WaitFreeHashMap, FullHashMapVisist)
 	ASSERT_EQ(nbr_value, std::numeric_limits<unsigned char>::max() + 1);
 }
 
-struct FatKey {
+struct FatKey
+{
 	std::size_t a;
 	std::size_t b;
 };
 
-struct FatKeyHash {
+struct FatKeyHash
+{
 	std::size_t p1;
 	std::size_t p2;
 
-	FatKeyHash operator>>(int shift) {
+	FatKeyHash operator>>(int shift)
+	{
 		return FatKeyHash{p1 >> shift, (p1 << (64 - shift)) + (p2 >> shift)};
 	}
 
-	FatKeyHash& operator>>=(int shift) {
+	FatKeyHash& operator>>=(int shift)
+	{
 		*this = *this >> shift;
 		return *this;
 	}
 
-	std::size_t operator&(std::size_t arg) {
+	std::size_t operator&(std::size_t arg)
+	{
 		return p2 & (arg);
 	}
 };
+
 bool operator==(const FatKeyHash& a, const FatKeyHash& b);
-bool operator==(const FatKeyHash& a, const FatKeyHash& b) {
+
+bool operator==(const FatKeyHash& a, const FatKeyHash& b)
+{
 	return a.p1 == b.p1 && a.p2 == b.p2;
 }
 
-struct Hash {
-	FatKeyHash operator()(const FatKey& k) const noexcept {
+struct Hash
+{
+	FatKeyHash operator()(const FatKey& k) const noexcept
+	{
 		return FatKeyHash{k.a, k.b};
 	}
 };
 
-TEST(WaitFreeHashMap, BigHash) {
+TEST(WaitFreeHashMap, BigHash)
+{
 	wfc::unordered_map<FatKey, int, Hash> m(4);
 
 	ASSERT_EQ(m.insert(FatKey{0, 0}, 1), wfc::operation_result::success);

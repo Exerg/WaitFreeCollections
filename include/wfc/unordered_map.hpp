@@ -398,7 +398,8 @@ namespace wfc
 			return value;
 		}
 
-		if (value.datanode_ptr != nullptr) {
+		if (value.datanode_ptr != nullptr)
+		{
 			node_union array_node{new /*(std::align_val_t{8})*/ arraynode_t{m_arrayLength}};
 
 			std::size_t new_pos = value.datanode_ptr->hash >> (m_arrayLength + level) & (m_arrayLength - 1);
@@ -407,7 +408,8 @@ namespace wfc
 			(*array_node.arraynode_ptr)[new_pos] = value;
 			mark_arraynode(array_node);
 
-			if (!node_atomic.compare_exchange_weak(old_value, array_node)) {
+			if (!node_atomic.compare_exchange_weak(old_value, array_node))
+			{
 				array_node = sanitize_ptr(array_node);
 				(*array_node.arraynode_ptr)[new_pos] = node_union{};
 				delete array_node.arraynode_ptr;

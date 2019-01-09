@@ -54,7 +54,7 @@ namespace wfc
 		using hash_t = std::invoke_result_t<HashFunction, Key>;
 		using value_t = Value;
 
-		explicit unordered_map(std::size_t log_bucket_count);
+		explicit unordered_map(std::size_t log_bucket_count, std::size_t fail_count);
 		unordered_map(const unordered_map&) = delete;
 		~unordered_map() noexcept = default;
 
@@ -151,15 +151,17 @@ namespace wfc
 		arraynode_t m_head;
 		std::size_t m_head_size;
 		std::size_t m_arrayLength;
+		std::size_t m_failed_count;
 		std::atomic<std::size_t> m_size;
 		static constexpr std::size_t hash_size_in_bits = sizeof(hash_t) * std::numeric_limits<unsigned char>::digits;
 	};
 
 	template <typename Key, typename Value, typename HashFunction>
-	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t log_bucket_count)
+	unordered_map<Key, Value, HashFunction>::unordered_map(std::size_t log_bucket_count, std::size_t failed_count)
 	    : m_head(1UL << log_bucket_count)
 	    , m_head_size(1UL << log_bucket_count)
 	    , m_arrayLength(log_bucket_count)
+	    , m_failed_count(failed_count)
 	    , m_size(0UL)
 	{
 		static_assert(std::atomic<std::size_t>::is_always_lock_free, "Atomic implementation is not lock free");
@@ -192,7 +194,7 @@ namespace wfc
 
 			while (true)
 			{
-				if (failCount > 8) // FIXME
+				if (failCount > m_failed_count)
 				{
 					node = mark_datanode(local, position);
 				}
@@ -562,7 +564,7 @@ namespace wfc
 			node = get_node(local, position);
 			++failCount;
 
-			if (failCount > 8) // FIXME
+			if (failCount > m_failed_count)
 			{
 				mark_datanode(node);
 				local = expand_node(local, position, r);

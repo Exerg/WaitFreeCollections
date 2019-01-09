@@ -4,12 +4,19 @@
 #include <limits>
 #include <type_traits>
 
+#ifndef __has_builtin
+	#define WFC__has_builtin(x) 0
+#else
+#define WFC__has_builtin(x) __has_builtin(x)
+#endif
+
 namespace wfc
 {
 	namespace details
 	{
+#if WFC__has_builtin(__builtin_clz) && WFC__has_builtin(__builtin_clzl) && WFC__has_builtin(__builtin_clzll)
 		template <typename T>
-		T clz(T x) // FIXME
+		T clz(T x)
 		{
 			assert(x != 0); // clz is undefined for 0
 
@@ -30,6 +37,27 @@ namespace wfc
 				static_assert(!std::is_same_v<T, T>);
 			}
 		}
+#else
+		template <typename T>
+		T clz(T x)
+		{
+			static_assert(std::is_unsigned_v<T>, "T should be unsigned");
+
+			T mask = T(1) << T(std::numeric_limits<T>::digits - 1);
+
+			T result = 0;
+
+			for (std::size_t i = 0; i < std::numeric_limits<T>::digits; ++i) {
+				if ((mask & x) != 0) {
+					return result;
+				}
+				++result;
+				mask >>= 1;
+			}
+
+			return result;
+		}
+#endif
 	} // namespace details
 
 	template <typename T>
@@ -53,4 +81,7 @@ namespace wfc
 		return nbr && !(nbr & (nbr - 1));
 	}
 } // namespace wfc
+
+#undef WFC__has_builtin
+
 #endif // WFC_MATH_HPP

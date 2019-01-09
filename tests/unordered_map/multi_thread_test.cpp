@@ -51,7 +51,7 @@ protected:
 	std::vector<std::thread> threads;
 	std::shared_future<void> futur;
 	std::promise<void> ready_promise;
-	wfc::unordered_map<unsigned char, std::size_t> map{4};
+	wfc::unordered_map<unsigned char, std::size_t> map{4, 16, 65535};
 };
 
 TEST_P(WaitFreeHashMapMultiThreadTest, UpdateNoConflict)
@@ -185,7 +185,7 @@ TEST_P(WaitFreeHashMapMultiThreadTest, RemoveConflict)
 
 TEST_P(WaitFreeHashMapMultiThreadTest, MixedOperation)
 {
-	wfc::unordered_map<unsigned char, std::size_t> custom_map{4};
+	wfc::unordered_map<unsigned char, std::size_t> custom_map{4, 16, 65535};
 	constexpr std::size_t nbr_threads = 3;
 	std::array<std::atomic_bool, map_size - 1> updated{};
 	std::array<std::atomic_bool, map_size - 1> removed{};

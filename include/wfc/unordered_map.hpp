@@ -376,7 +376,14 @@ namespace wfc
 	auto unordered_map<Key, Value, HashFunction>::allocate_node(hash_t hash, key_t key, value_t value) const
 	    -> node_union
 	{
-		return node_union{new /*(std::align_val_t{8})*/ node_t{hash, key, value}};
+		if (alignof(node_t*) < 4)
+		{
+			return node_union{new (std::align_val_t{8}) node_t{hash, key, value}};
+		}
+		else
+		{
+			return node_union{new node_t{hash, key, value}};
+		}
 	}
 
 	template <typename Key, typename Value, typename HashFunction>
@@ -400,7 +407,16 @@ namespace wfc
 
 		if (value.datanode_ptr != nullptr)
 		{
-			node_union array_node{new /*(std::align_val_t{8})*/ arraynode_t{m_arrayLength}};
+			node_union array_node;
+
+			if (alignof(arraynode_t*) < 4)
+			{
+				array_node = node_union{new (std::align_val_t{8}) arraynode_t{m_arrayLength}};
+			}
+			else
+			{
+				array_node = node_union{new arraynode_t{m_arrayLength}};
+			}
 
 			std::size_t new_pos = value.datanode_ptr->hash >> (m_arrayLength + level) & (m_arrayLength - 1);
 			unmark_datanode(value);

@@ -169,7 +169,7 @@ namespace wfc
 
 		if (!is_power_of_two(log_bucket_count))
 		{
-			throw std::runtime_error("Size should be a power of four");
+			throw std::runtime_error("Array length should be a power of two");
 		}
 	}
 

@@ -97,7 +97,7 @@ TEST_F(WaitFreeHashMapMultiThreadTest, UpdateConflict)
 			     j <= n;
 			     ++j)
 			{
-				if (map.update(static_cast<unsigned char>(j), 2 * (j + 1), j + 1) != wfc::operation_result::success)
+				if (failed(map.update(static_cast<unsigned char>(j), 2 * (j + 1), j + 1)))
 				{
 					++fails[idx];
 				}
@@ -161,7 +161,7 @@ TEST_F(WaitFreeHashMapMultiThreadTest, RemoveConflict)
 			     j <= n;
 			     ++j)
 			{
-				if (map.remove(static_cast<unsigned char>(j), j + 1) != wfc::operation_result::success)
+				if (failed(map.remove(static_cast<unsigned char>(j), j + 1)))
 				{
 					++fails[idx];
 				}
@@ -216,7 +216,7 @@ TEST_F(WaitFreeHashMapMultiThreadTest, MixedOperation)
 			     j <= n;
 			     ++j)
 			{
-				if (custom_map.update(static_cast<unsigned char>(j), 4 * j) == wfc::operation_result::success)
+				if (succeeded(custom_map.update(static_cast<unsigned char>(j), 4 * j)))
 				{
 					updated[j] = true;
 				}
@@ -232,7 +232,7 @@ TEST_F(WaitFreeHashMapMultiThreadTest, MixedOperation)
 			     j <= n;
 			     ++j)
 			{
-				if (custom_map.remove(static_cast<unsigned char>(j)) == wfc::operation_result::success)
+				if (succeeded(custom_map.remove(static_cast<unsigned char>(j))))
 				{
 					removed[j] = true;
 				}

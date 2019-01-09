@@ -26,7 +26,7 @@ namespace wfc
 	};
 
 	/**
-	 * Helper function that returns true if the parameter correspond to a success.
+	 * Helper function that returns true if the operation_result is a success.
 	 */
 	[[nodiscard]] constexpr bool succeeded(operation_result e) noexcept
 	{
@@ -34,7 +34,7 @@ namespace wfc
 	}
 
 	/**
-	 * Helper function that returns true if the parameter correspond to a fail state.
+	 * Helper function that returns true if the operation_result correspond to a failed state.
 	 */
 	[[nodiscard]] constexpr bool failed(operation_result e) noexcept
 	{
@@ -61,15 +61,15 @@ namespace wfc
 	 *
 	 * @details This map could be seen as a n-ary tree, (except that the head has 2^n children)
 	 * In the case of this map, n is array_length.
-	 * Each node of this map could be an array or a datanode. If two datanodes should go in the same place.
-	 * Then the existing datanode is transformed into an arraynode to allow the insertion of the two datanodes.
-	 * It may be noted that this process of extending the map will be repeted until the hash of the nodes differ.
+	 * Each node of this map could be an array or a datanode. If two datanodes should go in the same place
+	 * the existing datanode is transformed into an arraynode to allow the insertion of the two datanodes.
+	 * It is noteworthy that this expending of the map will be repeated until the hash of the two nodes differ.
 	 *
 	 * @tparam Key type of the key in the map
 	 * @tparam Value type of the value in the map
-	 * @tparam HashFunction Functor that should give a hash of the key.
-	 * This function should hash keys without having any collision.
-	 * As a consequence, it is recommended that the input size should be the same as the output size.
+	 * @tparam HashFunction Functor that holds the hash function to be used on keys.
+	 * The hash function has to be collision-free.
+	 * Consequently, output size should be at least as large as input size.
 	 */
 	template <typename Key, typename Value, typename HashFunction = identity_hash<Key>>
 	class unordered_map

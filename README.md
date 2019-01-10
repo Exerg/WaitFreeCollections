@@ -42,7 +42,7 @@ WIP
 - Compiler which supports C++17
 - CMake ≥ 3.10
 
-## Minimal exemple
+## Minimal unordered map example
 
 ```cpp
 #include <iostream>
@@ -100,7 +100,7 @@ This should output:
 
 ## How to import the library using CMake
 
-To include the library, you may copy / paste everything in a subfolder (such as `externals`) or use a git submodule.
+To include the library, you may copy / paste the content of this repository in a subfolder (such as `externals`) or use a git submodule.
 
 Then, in you CMakeLists.txt file, you just have to do something similar to:
 
@@ -169,7 +169,7 @@ Produced executables are inside the `bin` folder.
 
 Note that the `Clang-format` target does not produce anything.
 It just run the clang formatter.
-Also the target needs to be called explicitly.
+Also this target needs to be called explicitly.
 
 For more details, see the [CMakeLists.txt](CMakeLists.txt) file.
 

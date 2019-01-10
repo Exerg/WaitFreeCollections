@@ -140,10 +140,10 @@ You don't need to actually build the library beforehand to use it in your projec
 The build targets in this repository are for tests, exemples and code formatting.
 These are good to know should you contribute to this project or play with the exemples.
 
-First, you need to create a sub-directory to run `cmake` from it. Then you can build using `make`.
+First, you need to create a sub-directory to run CMake from it.
 
 ```
-$ mkdir build
+$ mkdir build && cd build
 $ cmake .. -DWFC_BUILD_ALL=1
 ```
 

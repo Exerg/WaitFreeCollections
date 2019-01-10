@@ -14,11 +14,11 @@ before_build:
 
     - mkdir ${APPVEYOR_BUILD_FOLDER}/debug_build
     - cd ${APPVEYOR_BUILD_FOLDER}/debug_build
-    - cmake .. -DBUILD_ALL=1 -DCMAKE_BUILD_TYPE=Debug
+    - cmake .. -DWFC_BUILD_ALL=1 -DCMAKE_BUILD_TYPE=Debug
 
     - mkdir ${APPVEYOR_BUILD_FOLDER}/release_build
     - cd ${APPVEYOR_BUILD_FOLDER}/release_build
-    - cmake .. -DBUILD_ALL=1 -DCMAKE_BUILD_TYPE=Release
+    - cmake .. -DWFC_BUILD_ALL=1 -DCMAKE_BUILD_TYPE=Release
 
 build_script:
     - cd ${APPVEYOR_BUILD_FOLDER}/debug_build

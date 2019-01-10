@@ -201,6 +201,10 @@ namespace wfc
 
 		void safe_delete(node_union node_to_free);
 
+		void watch_node(node_union node) noexcept;
+
+		void clear_watched_node() noexcept;
+
 		arraynode_t m_head;
 		std::size_t m_head_size;
 		std::size_t m_arrayLength;
@@ -227,9 +231,9 @@ namespace wfc
 		static_assert(std::atomic<std::size_t>::is_always_lock_free, "Atomic implementation is not lock free");
 		static_assert(std::atomic<node_union>::is_always_lock_free, "Atomic implementation is not lock free");
 
-		for (std::size_t i = 0; i < m_max_nbr_threads; ++i)
+		for (std::ptrdiff_t i = 0, n = static_cast<std::ptrdiff_t>(m_max_nbr_threads); i < n; ++i)
 		{
-			m_watched_nodes[i].store(0);
+			m_watched_nodes[i] = 0;
 		}
 
 		if (!is_power_of_two(array_length))
@@ -269,7 +273,7 @@ namespace wfc
 					node_union new_node = allocate_node(fullhash, key, value);
 					if (try_node_insertion(local, position, new_node))
 					{
-						m_watched_nodes[details::get_thread_id()] = 0;
+						clear_watched_node();
 
 						return operation_result::success;
 					}
@@ -291,7 +295,7 @@ namespace wfc
 				}
 				else
 				{
-					m_watched_nodes[details::get_thread_id()] = node.ptr_int;
+					watch_node(node);
 					node_union node2 = get_node(local, position);
 					if (node.ptr_int != node2.ptr_int)
 					{
@@ -301,7 +305,7 @@ namespace wfc
 					}
 					else if (node.datanode_ptr->hash == fullhash)
 					{
-						m_watched_nodes[details::get_thread_id()] = 0;
+						clear_watched_node();
 						return operation_result::already_present;
 					}
 					else
@@ -321,7 +325,7 @@ namespace wfc
 			}
 		}
 
-		m_watched_nodes[details::get_thread_id()] = 0;
+		clear_watched_node();
 		std::tie(position, std::ignore) = compute_pos_and_hash(position, hash, hash_size_in_bits - nbr_bits_to_shift);
 		node_union node = get_node(local, position);
 
@@ -357,12 +361,12 @@ namespace wfc
 			}
 			else if (node.datanode_ptr == nullptr)
 			{
-				m_watched_nodes[details::get_thread_id()] = 0;
+				clear_watched_node();
 				return std::nullopt;
 			}
 			else
 			{
-				m_watched_nodes[details::get_thread_id()] = node.ptr_int;
+				watch_node(node);
 				if (node.ptr_int != get_node(local, position).ptr_int)
 				{
 					ensure_not_replaced(local, position, r, node);
@@ -377,14 +381,14 @@ namespace wfc
 					}
 					else if (node.datanode_ptr == nullptr)
 					{
-						m_watched_nodes[details::get_thread_id()] = 0;
+						clear_watched_node();
 						return std::nullopt;
 					}
 				}
 				else if (node.datanode_ptr->hash == fullhash)
 				{
 					std::optional result = node.datanode_ptr->value;
-					m_watched_nodes[details::get_thread_id()] = 0;
+					clear_watched_node();
 
 					return result;
 				}
@@ -395,7 +399,7 @@ namespace wfc
 			}
 		}
 
-		m_watched_nodes[details::get_thread_id()] = 0;
+		clear_watched_node();
 		return std::nullopt;
 	}
 
@@ -484,7 +488,7 @@ namespace wfc
 		std::atomic<node_union>& node_atomic = (*sanitize_ptr(arraynode).arraynode_ptr)[position];
 		node_union old_value = node_atomic.load();
 
-		m_watched_nodes[details::get_thread_id()] = old_value.ptr_int;
+		watch_node(old_value);
 
 		if (is_array_node(old_value))
 		{
@@ -597,12 +601,12 @@ namespace wfc
 			}
 			else if (node.datanode_ptr == nullptr)
 			{
-				m_watched_nodes[details::get_thread_id()] = 0;
+				clear_watched_node();
 				return operation_result::element_not_found;
 			}
 			else
 			{
-				m_watched_nodes[details::get_thread_id()] = node.ptr_int;
+				watch_node(node);
 				if (node.ptr_int != get_node(local, position).ptr_int)
 				{
 					ensure_not_replaced(local, position, r, node);
@@ -619,7 +623,7 @@ namespace wfc
 					}
 					else if (node.datanode_ptr == nullptr)
 					{
-						m_watched_nodes[details::get_thread_id()] = 0;
+						clear_watched_node();
 						return operation_result::element_not_found;
 					}
 				}
@@ -628,7 +632,7 @@ namespace wfc
 				{
 					if (!compare_expected_value(node.datanode_ptr))
 					{
-						m_watched_nodes[details::get_thread_id()] = 0;
+						clear_watched_node();
 						return operation_result::expected_value_mismatch;
 					}
 
@@ -638,7 +642,7 @@ namespace wfc
 						safe_delete(node);
 						//delete node.datanode_ptr;
 
-						m_watched_nodes[details::get_thread_id()] = 0;
+						clear_watched_node();
 						return operation_result::success;
 					}
 					else
@@ -656,20 +660,20 @@ namespace wfc
 						}
 						else
 						{
-							m_watched_nodes[details::get_thread_id()] = 0;
+							clear_watched_node();
 							return operation_result::element_not_found;
 						}
 					}
 				}
 				else
 				{
-					m_watched_nodes[details::get_thread_id()] = 0;
+					clear_watched_node();
 					return operation_result::element_not_found;
 				}
 			}
 		}
 
-		m_watched_nodes[details::get_thread_id()] = 0;
+		clear_watched_node();
 		return operation_result::element_not_found;
 	}
 
@@ -683,7 +687,7 @@ namespace wfc
 		do
 		{
 			node = get_node(local, position);
-			m_watched_nodes[details::get_thread_id()] = node.ptr_int;
+			watch_node(node);
 			++fail_count;
 
 			if (fail_count > m_max_fail_count)
@@ -747,13 +751,13 @@ namespace wfc
 		do
 		{
 			freeable = true;
-			for (std::size_t i = 0; i < m_max_nbr_threads; ++i)
+			for (std::ptrdiff_t i = 0; i < m_max_nbr_threads; ++i)
 			{
-				if (i == details::get_thread_id())
+				if (static_cast<std::uintptr_t>(i) == details::get_thread_id())
 				{
 					continue;
 				}
-				else if (m_watched_nodes[i].load() == node_to_free.ptr_int)
+				else if (m_watched_nodes[i] == node_to_free.ptr_int)
 				{
 					freeable = false;
 					break;
@@ -765,6 +769,18 @@ namespace wfc
 				delete node_to_free.datanode_ptr;
 			}
 		} while (!freeable);
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	void unordered_map<Key, Value, HashFunction>::watch_node(node_union node) noexcept
+	{
+		m_watched_nodes[static_cast<std::ptrdiff_t>(details::get_thread_id())] = node.ptr_int;
+	}
+
+	template <typename Key, typename Value, typename HashFunction>
+	void unordered_map<Key, Value, HashFunction>::clear_watched_node() noexcept
+	{
+		m_watched_nodes[static_cast<std::ptrdiff_t>(details::get_thread_id())] = 0;
 	}
 } // namespace wfc
 

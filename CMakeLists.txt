@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10) # For CXX_STANDARD 17 property on Visual St
 project(WaitFreeHashMap)
 enable_language(CXX)
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 include(ctulu)
 include(conan)
@@ -15,7 +15,7 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-get_filename_component(root_dir        ${CMAKE_SOURCE_DIR}     ABSOLUTE)
+get_filename_component(root_dir        ${CMAKE_CURRENT_SOURCE_DIR}     ABSOLUTE)
 get_filename_component(include_dir     ${root_dir}/include     ABSOLUTE)
 get_filename_component(tests_dir       ${root_dir}/tests       ABSOLUTE)
 get_filename_component(example_dir     ${root_dir}/examples    ABSOLUTE)

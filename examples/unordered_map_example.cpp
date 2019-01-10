@@ -18,7 +18,7 @@ int main()
 		std::promise<void> ready_promise;
 		f = std::shared_future<void>(ready_promise.get_future());
 
-		wfc::unordered_map<std::size_t, std::size_t> m(8);
+		wfc::unordered_map<std::size_t, std::size_t> m(8, nbrThreads, nbrThreads);
 
 		std::array<std::thread, nbrThreads> threads;
 		std::array<double, nbrThreads> insertion_times = {};
